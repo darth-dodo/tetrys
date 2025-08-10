@@ -40,7 +40,7 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd tetriz
+cd tetrees
 ```
 
 2. Install dependencies:

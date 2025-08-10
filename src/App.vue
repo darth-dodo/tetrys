@@ -160,30 +160,7 @@ watch(speedMultiplier, (newSpeed) => {
   setSpeedMultiplier(newSpeed)
 }, { immediate: true })
 
-// Manage audio state during settings panel interactions
-let settingsAudioPaused = false
-
-watch(showSettings, async (isOpen) => {
-  // Only manage audio state if game is actively playing (not paused by player)
-  if (gameState.value.isPlaying && !gameState.value.isPaused) {
-    if (isOpen) {
-      // Settings opened during active gameplay - pause music temporarily
-      if (isMusicEnabled.value) {
-        pauseMusic()
-        settingsAudioPaused = true
-      }
-    } else {
-      // Settings closed - resume music if we paused it
-      if (settingsAudioPaused && isMusicEnabled.value) {
-        await resumeMusic()
-        settingsAudioPaused = false
-      }
-    }
-  } else if (!isOpen) {
-    // Reset flag when settings closed regardless of game state
-    settingsAudioPaused = false
-  }
-})
+// Audio system manages its own state - no interference needed
 
 // Enhanced game controls with audio feedback
 const handleMove = (direction: 'left' | 'right' | 'down') => {

@@ -25,6 +25,7 @@ let soundGainNode: GainNode | null = null
 // Music state tracking
 let isMusicPlaying = false
 let isAudioContextInitialized = false
+let initializationInProgress = false
 
 // Track-specific note positions to preserve playback position
 const trackPositions: Record<string, number> = {
@@ -38,9 +39,21 @@ const trackPositions: Record<string, number> = {
 const settings = ref<AudioSettings>({ ...DEFAULT_SETTINGS })
 
 export function useAudio() {
-  // Initialize audio context
-  const initAudioContext = async () => {
+  // Initialize audio context with proper coordination
+  const initAudioContext = async (): Promise<boolean> => {
+    // Prevent concurrent initialization attempts
+    if (initializationInProgress) {
+      // Wait for ongoing initialization to complete
+      let attempts = 0
+      while (initializationInProgress && attempts < 50) { // Max 5 seconds wait
+        await new Promise(resolve => setTimeout(resolve, 100))
+        attempts++
+      }
+      return isAudioContextInitialized
+    }
+
     if (!audioContext) {
+      initializationInProgress = true
       try {
         audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
         
@@ -62,9 +75,11 @@ export function useAudio() {
         
         updateVolumes()
         isAudioContextInitialized = true
+        initializationInProgress = false
       } catch (error) {
         console.warn('Failed to initialize audio context:', error)
-        return
+        initializationInProgress = false
+        return false
       }
     }
     
@@ -72,10 +87,15 @@ export function useAudio() {
     if (audioContext && audioContext.state === 'suspended') {
       try {
         await audioContext.resume()
+        // Check if resume was successful
+        return audioContext.state !== 'suspended'
       } catch (error) {
         console.warn('Failed to resume audio context:', error)
+        return false
       }
     }
+    
+    return isAudioContextInitialized
   }
   
   const updateVolumes = () => {
@@ -253,7 +273,12 @@ export function useAudio() {
   const startMusic = async () => {
     if (!settings.value.musicEnabled) return
     
-    await initAudioContext()
+    const initialized = await initAudioContext()
+    if (!initialized) {
+      console.warn('Could not initialize audio context for music')
+      return
+    }
+    
     if (!isMusicPlaying) {
       isMusicPlaying = true
       if (!musicTimeout) {
@@ -285,7 +310,12 @@ export function useAudio() {
   
   const resumeMusic = async () => {
     if (settings.value.musicEnabled) {
-      await initAudioContext()
+      const initialized = await initAudioContext()
+      if (!initialized) {
+        console.warn('Could not initialize audio context for resuming music')
+        return
+      }
+      
       isMusicPlaying = true
       if (!musicTimeout) {
         playNextNote()
@@ -297,7 +327,11 @@ export function useAudio() {
   const playSound = async (type: 'move' | 'rotate' | 'drop' | 'line' | 'gameover') => {
     if (!settings.value.soundEnabled) return
     
-    await initAudioContext()
+    const initialized = await initAudioContext()
+    if (!initialized) {
+      console.warn('Could not initialize audio context for sound effects')
+      return
+    }
     
     switch (type) {
       case 'move':
@@ -323,11 +357,21 @@ export function useAudio() {
   // Settings management
   const toggleMusic = async () => {
     settings.value.musicEnabled = !settings.value.musicEnabled
+    
     if (settings.value.musicEnabled) {
-      await startMusic()
+      // Ensure audio context is initialized before starting music
+      const initialized = await initAudioContext()
+      if (initialized) {
+        await startMusic()
+      } else {
+        console.warn('Could not initialize audio context, music toggle failed')
+        // Revert the setting change
+        settings.value.musicEnabled = false
+      }
     } else {
       stopMusic()
     }
+    
     updateVolumes()
     saveSettings()
   }
@@ -350,7 +394,7 @@ export function useAudio() {
     saveSettings()
   }
   
-  const setCurrentTrack = (trackId: string) => {
+  const setCurrentTrack = async (trackId: string) => {
     // Save current position for the current track
     trackPositions[currentTrackId] = currentNoteIndex
     
@@ -376,8 +420,13 @@ export function useAudio() {
     
     // Restart music if it was playing
     if (wasPlaying) {
-      isMusicPlaying = true
-      playNextNote()
+      const initialized = await initAudioContext()
+      if (initialized) {
+        isMusicPlaying = true
+        playNextNote()
+      } else {
+        console.warn('Could not initialize audio context for track change')
+      }
     }
   }
   

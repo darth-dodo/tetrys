@@ -1,8 +1,8 @@
-# 🏗️ Tetriz System Architecture
+# 🏗️ tetrees System Architecture
 
 ## Overview
 
-Tetriz is built using a modern, scalable architecture designed for mobile-first gaming experiences with retro aesthetics and high performance.
+tetrees is built using a modern, scalable architecture designed for mobile-first gaming experiences with retro aesthetics and high performance.
 
 ## 📊 Architecture Diagrams
 

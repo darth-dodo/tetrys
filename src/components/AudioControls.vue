@@ -9,7 +9,7 @@
         <button 
           class="toggle-button"
           :class="{ active: isMusicEnabled }"
-          @click="toggleMusic"
+          @click="() => toggleMusic()"
         >
           {{ isMusicEnabled ? 'ON' : 'OFF' }}
         </button>
@@ -21,7 +21,7 @@
           max="1"
           step="0.1"
           :value="musicVolume"
-          @input="setMusicVolume(parseFloat($event.target.value))"
+          @input="setMusicVolume(parseFloat(($event.target as HTMLInputElement).value))"
           class="volume-slider"
         />
         <span class="volume-label">{{ Math.round(musicVolume * 100) }}%</span>
@@ -47,7 +47,7 @@
           max="1"
           step="0.1"
           :value="soundVolume"
-          @input="setSoundVolume(parseFloat($event.target.value))"
+          @input="setSoundVolume(parseFloat(($event.target as HTMLInputElement).value))"
           class="volume-slider"
         />
         <span class="volume-label">{{ Math.round(soundVolume * 100) }}%</span>
@@ -62,7 +62,7 @@
           v-for="track in availableTracks"
           :key="track.id"
           :class="['track-button', { active: currentTrack === track.id }]"
-          @click="selectTrack(track.id)"
+          @click="() => selectTrack(track.id)"
         >
           {{ track.name }}
         </button>
@@ -74,7 +74,7 @@
     <div class="control-section">
       <button 
         class="test-button"
-        @click="playTestSound"
+        @click="() => playTestSound()"
         :disabled="!isSoundEnabled"
       >
         TEST SOUND
@@ -103,12 +103,12 @@ const {
 
 const availableTracks = getAvailableTracks()
 
-const playTestSound = () => {
-  playSound('line')
+const playTestSound = async () => {
+  await playSound('line')
 }
 
-const selectTrack = (trackId: string) => {
-  setCurrentTrack(trackId)
+const selectTrack = async (trackId: string) => {
+  await setCurrentTrack(trackId)
 }
 
 const getCurrentTrackDescription = () => {

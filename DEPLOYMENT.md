@@ -1,4 +1,4 @@
-# Deployment Instructions for Tetriz
+# Deployment Instructions for tetrees
 
 ## Quick Deploy to Netlify
 
@@ -6,7 +6,7 @@
 
 1. **Push to GitHub**:
    ```bash
-   git remote add origin https://github.com/yourusername/tetriz.git
+   git remote add origin https://github.com/yourusername/tetrees.git
    git branch -M main
    git push -u origin main
    ```
@@ -14,7 +14,7 @@
 2. **Set up Netlify**:
    - Go to [netlify.com](https://netlify.com) and sign up/login
    - Connect your GitHub account
-   - Click "New site from Git" → Select your tetriz repository
+   - Click "New site from Git" → Select your tetrees repository
    - Netlify will auto-detect the build settings from `netlify.toml`
 
 3. **Configure GitHub Secrets**:
@@ -50,7 +50,7 @@ netlify deploy --prod --dir=dist
 
 ## Live Demo Features
 
-Once deployed, your Tetriz game will have:
+Once deployed, your tetrees game will have:
 
 ✅ **Mobile Responsive Design**
 - Touch controls and swipe gestures
@@ -98,7 +98,7 @@ npm run type-check
 ## Project Structure
 
 ```
-tetriz/
+tetrees/
 ├── src/
 │   ├── components/          # Vue components
 │   │   ├── GameBoard.vue   # Main game board
