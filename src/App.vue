@@ -73,6 +73,7 @@
           @start="startGame"
           @pause="pauseGame"
           @restart="restartGame"
+          @reset="handleReset"
         />
       </div>
 
@@ -203,6 +204,11 @@ const formatScore = (score: number): string => {
 const restartGame = (): void => {
   resetGame()
   startGame()
+}
+
+// Reset game without starting a new one
+const handleReset = (): void => {
+  resetGame()
 }
 
 // Prevent context menu on long press (mobile)

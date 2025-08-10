@@ -17,6 +17,25 @@
       <button class="action-button" @click="$emit('pause')" v-if="gameState.isPlaying">
         {{ gameState.isPaused ? 'RESUME' : 'PAUSE' }}
       </button>
+      <button class="action-button reset-button" @click="showResetConfirm = true" v-if="gameState.isPlaying">
+        RESET
+      </button>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div v-if="showResetConfirm" class="reset-modal-overlay" @click="showResetConfirm = false">
+      <div class="reset-modal" @click.stop>
+        <h3>Reset Game?</h3>
+        <p>Are you sure you want to reset the current game? This will clear your progress.</p>
+        <div class="reset-modal-actions">
+          <button class="modal-button cancel-button" @click="showResetConfirm = false">
+            CANCEL
+          </button>
+          <button class="modal-button reset-confirm-button" @click="confirmReset">
+            RESET
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -38,10 +57,14 @@ interface Emits {
   start: []
   pause: []
   restart: []
+  reset: []
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+// Reset confirmation modal state
+const showResetConfirm = ref(false)
 
 // Simple control handlers
 
@@ -69,6 +92,11 @@ const handleRotate = () => {
 const handleDrop = () => {
   if (!props.gameState.isPlaying || props.gameState.isPaused) return
   emit('drop')
+}
+
+const confirmReset = () => {
+  showResetConfirm.value = false
+  emit('reset')
 }
 
 
@@ -236,6 +264,113 @@ onUnmounted(() => {
   }
 }
 
+/* Reset button specific styles */
+.reset-button {
+  background: var(--theme-bg, #333);
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+.reset-button:hover, .reset-button:focus {
+  background: #ff6b6b;
+  color: var(--theme-bg, #000);
+}
+
+.reset-button:active {
+  background: #ff5252;
+  transform: scale(0.95);
+}
+
+/* Reset confirmation modal */
+.reset-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.reset-modal {
+  background: var(--theme-bg, #333);
+  border: 3px solid var(--theme-primary, #00ff00);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--theme-shadow, none);
+  text-align: center;
+}
+
+.reset-modal h3 {
+  color: var(--theme-primary, #00ff00);
+  font-family: monospace;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 16px 0;
+}
+
+.reset-modal p {
+  color: var(--theme-text, #ccc);
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0 0 24px 0;
+}
+
+.reset-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.modal-button {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 12px 20px;
+  border: 3px solid;
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  min-width: 100px;
+  min-height: 48px;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background: var(--theme-bg, #333);
+  color: var(--theme-text-secondary, #999);
+  border-color: var(--theme-text-secondary, #999);
+}
+
+.cancel-button:hover, .cancel-button:focus {
+  background: var(--theme-text-secondary, #999);
+  color: var(--theme-bg, #000);
+}
+
+.reset-confirm-button {
+  background: var(--theme-bg, #333);
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
+.reset-confirm-button:hover, .reset-confirm-button:focus {
+  background: #ff6b6b;
+  color: var(--theme-bg, #000);
+}
+
+.modal-button:active {
+  transform: scale(0.95);
+}
+
 @media (max-width: 320px) {
   .controls-grid {
     max-width: 200px;
@@ -253,6 +388,29 @@ onUnmounted(() => {
     font-size: 12px;
     min-width: 70px;
     min-height: 44px;
+  }
+
+  .reset-modal {
+    padding: 20px;
+  }
+
+  .reset-modal h3 {
+    font-size: 18px;
+  }
+
+  .reset-modal p {
+    font-size: 12px;
+  }
+
+  .modal-button {
+    padding: 10px 16px;
+    font-size: 12px;
+    min-width: 80px;
+    min-height: 44px;
+  }
+
+  .reset-modal-actions {
+    gap: 10px;
   }
 }
 </style>
