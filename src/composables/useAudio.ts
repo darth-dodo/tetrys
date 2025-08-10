@@ -26,6 +26,14 @@ let soundGainNode: GainNode | null = null
 let isMusicPlaying = false
 let isAudioContextInitialized = false
 
+// Track-specific note positions to preserve playback position
+const trackPositions: Record<string, number> = {
+  tetris: 0,
+  arcade: 0,
+  chill: 0,
+  retro: 0
+}
+
 // Audio settings
 const settings = ref<AudioSettings>({ ...DEFAULT_SETTINGS })
 
@@ -142,33 +150,50 @@ export function useAudio() {
       { freq: 329.63, duration: 0.6 }, // E4
     ],
     chill: [
-      { freq: 220.00, duration: 0.8 }, // A3
-      { freq: 246.94, duration: 0.8 }, // B3
-      { freq: 261.63, duration: 0.8 }, // C4
-      { freq: 293.66, duration: 0.8 }, // D4
-      { freq: 329.63, duration: 0.8 }, // E4
-      { freq: 293.66, duration: 0.8 }, // D4
-      { freq: 261.63, duration: 0.8 }, // C4
-      { freq: 246.94, duration: 0.8 }, // B3
+      { freq: 220.00, duration: 1.0 }, // A3
+      { freq: 261.63, duration: 0.5 }, // C4
+      { freq: 293.66, duration: 0.5 }, // D4
+      { freq: 329.63, duration: 1.0 }, // E4
+      { freq: 293.66, duration: 0.5 }, // D4
+      { freq: 261.63, duration: 0.5 }, // C4
+      { freq: 246.94, duration: 1.0 }, // B3
+      { freq: 220.00, duration: 0.5 }, // A3
+      { freq: 196.00, duration: 0.5 }, // G3
+      { freq: 220.00, duration: 1.0 }, // A3
+      { freq: 246.94, duration: 0.5 }, // B3
+      { freq: 261.63, duration: 0.5 }, // C4
+      { freq: 293.66, duration: 1.5 }, // D4
+      { freq: 261.63, duration: 0.5 }, // C4
+      { freq: 220.00, duration: 1.0 }, // A3
+      { freq: 196.00, duration: 1.0 }, // G3
     ],
     retro: [
-      { freq: 174.61, duration: 0.4 }, // F3
-      { freq: 196.00, duration: 0.4 }, // G3
-      { freq: 220.00, duration: 0.4 }, // A3
-      { freq: 246.94, duration: 0.4 }, // B3
-      { freq: 261.63, duration: 0.4 }, // C4
-      { freq: 293.66, duration: 0.4 }, // D4
-      { freq: 329.63, duration: 0.4 }, // E4
-      { freq: 349.23, duration: 0.4 }, // F4
-      { freq: 329.63, duration: 0.4 }, // E4
-      { freq: 293.66, duration: 0.4 }, // D4
-      { freq: 261.63, duration: 0.4 }, // C4
-      { freq: 246.94, duration: 0.4 }, // B3
+      { freq: 261.63, duration: 0.3 }, // C4
+      { freq: 329.63, duration: 0.3 }, // E4
+      { freq: 392.00, duration: 0.3 }, // G4
+      { freq: 329.63, duration: 0.3 }, // E4
+      { freq: 349.23, duration: 0.6 }, // F4
+      { freq: 293.66, duration: 0.3 }, // D4
+      { freq: 349.23, duration: 0.3 }, // F4
+      { freq: 392.00, duration: 0.6 }, // G4
+      { freq: 440.00, duration: 0.3 }, // A4
+      { freq: 392.00, duration: 0.3 }, // G4
+      { freq: 349.23, duration: 0.3 }, // F4
+      { freq: 329.63, duration: 0.3 }, // E4
+      { freq: 293.66, duration: 0.6 }, // D4
+      { freq: 261.63, duration: 0.3 }, // C4
+      { freq: 220.00, duration: 0.3 }, // A3
+      { freq: 246.94, duration: 0.6 }, // B3
+      { freq: 261.63, duration: 0.6 }, // C4
+      { freq: 196.00, duration: 0.3 }, // G3
+      { freq: 220.00, duration: 0.3 }, // A3
+      { freq: 246.94, duration: 0.3 }, // B3
     ]
   }
   
   let currentNoteIndex = 0
   let musicTimeout: number | null = null
+  let currentTrackId = 'tetris'
   
   const playNextNote = () => {
     if (!settings.value.musicEnabled || !audioContext || !musicGainNode || !isMusicPlaying) {
@@ -243,6 +268,8 @@ export function useAudio() {
       clearTimeout(musicTimeout)
       musicTimeout = null
     }
+    // Save current position for the current track
+    trackPositions[currentTrackId] = currentNoteIndex
     currentNoteIndex = 0
   }
   
@@ -324,14 +351,33 @@ export function useAudio() {
   }
   
   const setCurrentTrack = (trackId: string) => {
+    // Save current position for the current track
+    trackPositions[currentTrackId] = currentNoteIndex
+    
+    const wasPlaying = isMusicPlaying && settings.value.musicEnabled
+    
+    // Stop current music if playing
+    if (wasPlaying) {
+      isMusicPlaying = false
+      if (musicTimeout) {
+        clearTimeout(musicTimeout)
+        musicTimeout = null
+      }
+    }
+    
+    // Switch to new track
     settings.value.currentTrack = trackId
-    currentNoteIndex = 0 // Reset to beginning of new track
+    currentTrackId = trackId
+    
+    // Restore position for the new track (or start from beginning if never played)
+    currentNoteIndex = trackPositions[trackId] || 0
+    
     saveSettings()
     
-    // If music is currently playing, restart with new track
-    if (isMusicPlaying && settings.value.musicEnabled) {
-      stopMusic()
-      startMusic()
+    // Restart music if it was playing
+    if (wasPlaying) {
+      isMusicPlaying = true
+      playNextNote()
     }
   }
   
@@ -374,6 +420,7 @@ export function useAudio() {
   // Load settings on mount
   onMounted(() => {
     loadSettings()
+    currentTrackId = settings.value.currentTrack
     updateVolumes()
   })
   
