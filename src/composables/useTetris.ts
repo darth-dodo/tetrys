@@ -258,7 +258,15 @@ export function useTetris() {
 
   const pauseGame = (): void => {
     gameState.value.isPaused = !gameState.value.isPaused
-    if (!gameState.value.isPaused && gameState.value.isPlaying) {
+    
+    if (gameState.value.isPaused) {
+      // Pause: Cancel the current game loop
+      if (gameLoop) {
+        cancelAnimationFrame(gameLoop)
+        gameLoop = null
+      }
+    } else if (gameState.value.isPlaying) {
+      // Resume: Start a new game loop
       gameLoop = requestAnimationFrame(update)
     }
   }
