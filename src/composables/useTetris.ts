@@ -25,7 +25,8 @@ export function useTetris() {
     lines: 0,
     isGameOver: false,
     isPaused: false,
-    isPlaying: false
+    isPlaying: false,
+    speedMultiplier: 1
   })
 
   let gameLoop: number | null = null
@@ -33,9 +34,10 @@ export function useTetris() {
   let currentRotation = 0
 
   // Computed properties
-  const fallSpeed = computed(() => 
-    Math.max(100, INITIAL_FALL_SPEED - (gameState.value.level - 1) * SPEED_INCREASE_PER_LEVEL)
-  )
+  const fallSpeed = computed(() => {
+    const baseSpeed = Math.max(100, INITIAL_FALL_SPEED - (gameState.value.level - 1) * SPEED_INCREASE_PER_LEVEL)
+    return Math.max(50, Math.floor(baseSpeed / gameState.value.speedMultiplier))
+  })
 
   // Create random tetromino
   const createRandomTetromino = (): TetrominoShape => {
@@ -228,8 +230,14 @@ export function useTetris() {
     }
   }
 
+  // Speed control
+  const setSpeedMultiplier = (multiplier: number): void => {
+    gameState.value.speedMultiplier = multiplier
+  }
+
   // Game controls
   const startGame = (): void => {
+    const currentSpeed = gameState.value.speedMultiplier
     gameState.value = {
       board: Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null)),
       currentPiece: null,
@@ -240,7 +248,8 @@ export function useTetris() {
       lines: 0,
       isGameOver: false,
       isPaused: false,
-      isPlaying: true
+      isPlaying: true,
+      speedMultiplier: currentSpeed
     }
 
     spawnNewPiece()
@@ -277,6 +286,7 @@ export function useTetris() {
     dropPiece,
     startGame,
     pauseGame,
-    resetGame
+    resetGame,
+    setSpeedMultiplier
   }
 }

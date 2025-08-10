@@ -18,6 +18,12 @@
         <div class="settings-section">
           <AudioControls />
         </div>
+        <div class="settings-section">
+          <SpeedControl 
+            :current-speed="speedMultiplier" 
+            @set-speed="setSpeed"
+          />
+        </div>
         <div class="settings-actions">
           <button class="close-button" @click="showSettings = false">
             CLOSE
@@ -72,13 +78,38 @@
 
       <!-- Start Screen -->
       <div v-if="!gameState.isPlaying && !gameState.isGameOver" class="start-screen">
-        <h2>CLASSIC TETREES</h2>
-        <p>Drop blocks to clear lines</p>
+        <div class="logo-container">
+          <h1 class="game-logo">TETREES</h1>
+          <div class="logo-subtitle">Classic Block Puzzle</div>
+        </div>
+        
+        <div class="game-preview">
+          <div class="preview-grid">
+            <div class="preview-block t-piece"></div>
+            <div class="preview-block i-piece"></div>
+            <div class="preview-block o-piece"></div>
+            <div class="preview-block l-piece"></div>
+          </div>
+        </div>
+        
+        <div class="game-description">
+          <p>Stack falling blocks to clear lines</p>
+          <p>The classic puzzle game reimagined</p>
+        </div>
+        
         <div class="start-options">
-          <button @click="startGame">START GAME</button>
-          <button @click="showSettings = true" class="secondary-button">
-            SETTINGS
+          <button @click="startGame" class="start-button">
+            ▶ START GAME
           </button>
+          <button @click="showSettings = true" class="settings-button">
+            ⚙ SETTINGS
+          </button>
+        </div>
+        
+        <div class="controls-hint">
+          <div class="hint-row">
+            <span class="key">←→↓</span> Move • <span class="key">↑</span> Rotate • <span class="key">P</span> Pause
+          </div>
         </div>
       </div>
     </main>
@@ -86,16 +117,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useTetris } from '@/composables/useTetris'
 import { useTheme } from '@/composables/useTheme'
 import { useAudio } from '@/composables/useAudio'
+import { useSpeed } from '@/composables/useSpeed'
 import GameBoard from '@/components/GameBoard.vue'
 import GameControls from '@/components/GameControls.vue'
 import NextPiece from '@/components/NextPiece.vue'
 import ScoreBoard from '@/components/ScoreBoard.vue'
 import ThemeSelector from '@/components/ThemeSelector.vue'
 import AudioControls from '@/components/AudioControls.vue'
+import SpeedControl from '@/components/SpeedControl.vue'
 
 // Settings panel state
 const showSettings = ref(false)
@@ -104,7 +137,10 @@ const showSettings = ref(false)
 useTheme()
 
 // Use audio system
-const { playSound, startMusic, stopMusic } = useAudio()
+const { playSound, startMusic, stopMusic, pauseMusic, resumeMusic } = useAudio()
+
+// Use speed system
+const { speedMultiplier, setSpeed } = useSpeed()
 
 // Use the Tetris game logic
 const {
@@ -114,8 +150,14 @@ const {
   dropPiece,
   startGame: originalStartGame,
   pauseGame: originalPauseGame,
-  resetGame
+  resetGame,
+  setSpeedMultiplier
 } = useTetris()
+
+// Watch for speed changes and update game
+watch(speedMultiplier, (newSpeed) => {
+  setSpeedMultiplier(newSpeed)
+}, { immediate: true })
 
 // Enhanced game controls with audio feedback
 const handleMove = (direction: 'left' | 'right' | 'down') => {
@@ -146,9 +188,9 @@ const startGame = () => {
 const pauseGame = () => {
   originalPauseGame()
   if (gameState.isPaused) {
-    stopMusic()
+    pauseMusic()
   } else {
-    startMusic()
+    resumeMusic()
   }
 }
 
@@ -383,19 +425,160 @@ document.addEventListener('touchend', (e) => {
 
 .start-screen {
   text-align: center;
-  padding: 40px;
+  padding: 30px 20px;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
-.start-screen h2 {
-  color: #00ff00;
-  font-size: 28px;
-  margin-bottom: 20px;
-}
-
-.start-screen p {
-  color: #ccc;
+.logo-container {
   margin-bottom: 30px;
-  font-size: 16px;
+}
+
+.game-logo {
+  color: var(--theme-primary, #00ff00);
+  font-size: 48px;
+  font-weight: 900;
+  margin: 0;
+  text-shadow: var(--theme-glow, 0 0 20px rgba(0, 255, 0, 0.3));
+  letter-spacing: 2px;
+}
+
+.logo-subtitle {
+  color: var(--theme-text-secondary, #ccc);
+  font-size: 14px;
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.game-preview {
+  margin: 30px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.preview-grid {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.preview-block {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--theme-border, #333);
+  animation: float 2s ease-in-out infinite;
+}
+
+.t-piece { 
+  background: var(--piece-t, #ff00ff); 
+  animation-delay: 0s;
+}
+.i-piece { 
+  background: var(--piece-i, #00ffff); 
+  animation-delay: 0.5s;
+}
+.o-piece { 
+  background: var(--piece-o, #ffff00); 
+  animation-delay: 1s;
+}
+.l-piece { 
+  background: var(--piece-l, #ff8000); 
+  animation-delay: 1.5s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.game-description {
+  margin: 25px 0;
+}
+
+.game-description p {
+  color: var(--theme-text-secondary, #ccc);
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.start-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  margin: 30px 0;
+}
+
+.start-button {
+  background: var(--theme-primary, #00ff00);
+  color: var(--theme-bg, #000);
+  border: 3px solid var(--theme-primary, #00ff00);
+  padding: 15px 30px;
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  box-shadow: 0 4px 0 var(--theme-secondary, #008800);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 200px;
+}
+
+.start-button:hover {
+  background: var(--theme-secondary, #008800);
+  border-color: var(--theme-secondary, #008800);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--theme-accent, #006600);
+}
+
+.start-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--theme-accent, #006600);
+}
+
+.settings-button {
+  background: transparent;
+  color: var(--theme-text-secondary, #ccc);
+  border: 2px solid var(--theme-text-secondary, #ccc);
+  padding: 10px 20px;
+  font-family: monospace;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.settings-button:hover {
+  background: var(--theme-text-secondary, #ccc);
+  color: var(--theme-bg, #000);
+}
+
+.controls-hint {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid var(--theme-border, #333);
+}
+
+.hint-row {
+  color: var(--theme-text-secondary, #888);
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 1.4;
+}
+
+.key {
+  background: var(--theme-surface, #111);
+  color: var(--theme-text, #fff);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--theme-border, #333);
+  font-weight: bold;
 }
 
 @media (min-width: 768px) {
@@ -437,17 +620,39 @@ document.addEventListener('touchend', (e) => {
   }
   
   .start-screen {
-    padding: 20px 10px;
+    padding: 20px 15px;
   }
   
-  .start-screen h2 {
-    font-size: 24px;
-    margin-bottom: 15px;
+  .game-logo {
+    font-size: 36px;
   }
   
-  .start-screen p {
-    font-size: 14px;
-    margin-bottom: 20px;
+  .logo-subtitle {
+    font-size: 12px;
+  }
+  
+  .game-description p {
+    font-size: 13px;
+  }
+  
+  .start-button {
+    padding: 12px 25px;
+    font-size: 16px;
+    min-width: 180px;
+  }
+  
+  .settings-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .preview-block {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .hint-row {
+    font-size: 11px;
   }
 }
 

@@ -54,6 +54,22 @@
       </div>
     </div>
 
+    <!-- Music Track Selection -->
+    <div class="control-section" v-if="isMusicEnabled">
+      <div class="control-label">Music Track</div>
+      <div class="track-selector">
+        <button
+          v-for="track in availableTracks"
+          :key="track.id"
+          :class="['track-button', { active: currentTrack === track.id }]"
+          @click="selectTrack(track.id)"
+        >
+          {{ track.name }}
+        </button>
+      </div>
+      <div class="track-info">{{ getCurrentTrackDescription() }}</div>
+    </div>
+
     <!-- Test Sound Button -->
     <div class="control-section">
       <button 
@@ -79,11 +95,25 @@ const {
   toggleSound,
   setMusicVolume,
   setSoundVolume,
-  playSound
+  playSound,
+  setCurrentTrack,
+  getAvailableTracks,
+  currentTrack
 } = useAudio()
+
+const availableTracks = getAvailableTracks()
 
 const playTestSound = () => {
   playSound('line')
+}
+
+const selectTrack = (trackId: string) => {
+  setCurrentTrack(trackId)
+}
+
+const getCurrentTrackDescription = () => {
+  const track = availableTracks.find(t => t.id === currentTrack.value)
+  return track?.description || 'Classic theme'
 }
 </script>
 
@@ -210,6 +240,48 @@ const playTestSound = () => {
   cursor: not-allowed;
 }
 
+.track-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.track-button {
+  background: var(--theme-bg, #000);
+  color: var(--theme-text, #fff);
+  border: 1px solid var(--theme-border, #00ff00);
+  padding: 6px 4px;
+  font-family: monospace;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.track-button:hover {
+  background: var(--theme-surface, #111);
+}
+
+.track-button.active {
+  background: var(--theme-primary, #00ff00);
+  color: var(--theme-bg, #000);
+  border-color: var(--theme-primary, #00ff00);
+}
+
+.track-info {
+  color: var(--theme-text-secondary, #ccc);
+  font-size: 9px;
+  font-family: monospace;
+  text-align: center;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
 @media (min-width: 480px) {
   .audio-controls {
     padding: 20px;
@@ -236,6 +308,28 @@ const playTestSound = () => {
   .test-button {
     font-size: 11px;
     padding: 8px 16px;
+  }
+  
+  .track-selector {
+    gap: 8px;
+    margin: 10px 0;
+  }
+  
+  .track-button {
+    font-size: 10px;
+    padding: 8px 6px;
+    min-height: 36px;
+  }
+  
+  .track-info {
+    font-size: 10px;
+    margin-top: 6px;
+  }
+}
+
+@media (min-width: 768px) {
+  .track-selector {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 }
 </style>

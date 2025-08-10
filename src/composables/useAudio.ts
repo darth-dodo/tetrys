@@ -5,6 +5,7 @@ interface AudioSettings {
   soundEnabled: boolean
   musicVolume: number
   soundVolume: number
+  currentTrack: string
 }
 
 const AUDIO_STORAGE_KEY = 'tetrees-audio-settings'
@@ -12,13 +13,18 @@ const DEFAULT_SETTINGS: AudioSettings = {
   musicEnabled: false,
   soundEnabled: true,
   musicVolume: 0.3,
-  soundVolume: 0.7
+  soundVolume: 0.7,
+  currentTrack: 'tetris'
 }
 
 // Audio context and nodes
 let audioContext: AudioContext | null = null
 let musicGainNode: GainNode | null = null
 let soundGainNode: GainNode | null = null
+
+// Music state tracking
+let isMusicPlaying = false
+let isAudioContextInitialized = false
 
 // Audio settings
 const settings = ref<AudioSettings>({ ...DEFAULT_SETTINGS })
@@ -27,21 +33,40 @@ export function useAudio() {
   // Initialize audio context
   const initAudioContext = async () => {
     if (!audioContext) {
-      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-      
-      // Create gain nodes
-      musicGainNode = audioContext.createGain()
-      soundGainNode = audioContext.createGain()
-      
-      musicGainNode.connect(audioContext.destination)
-      soundGainNode.connect(audioContext.destination)
-      
-      updateVolumes()
+      try {
+        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        
+        // Create gain nodes
+        musicGainNode = audioContext.createGain()
+        soundGainNode = audioContext.createGain()
+        
+        musicGainNode.connect(audioContext.destination)
+        soundGainNode.connect(audioContext.destination)
+        
+        // Add state change listener
+        audioContext.addEventListener('statechange', () => {
+          console.log('Audio context state:', audioContext?.state)
+          if (audioContext?.state === 'running' && isMusicPlaying && settings.value.musicEnabled) {
+            // Resume music if it was playing
+            playNextNote()
+          }
+        })
+        
+        updateVolumes()
+        isAudioContextInitialized = true
+      } catch (error) {
+        console.warn('Failed to initialize audio context:', error)
+        return
+      }
     }
     
     // Resume context if suspended
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume()
+    if (audioContext && audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume()
+      } catch (error) {
+        console.warn('Failed to resume audio context:', error)
+      }
     }
   }
   
@@ -79,71 +104,166 @@ export function useAudio() {
     frequencies.forEach(freq => createBeep(freq, duration, 'square'))
   }
   
-  // Background music generation (simple loop)
+  // Background music themes
   let musicInterval: number | null = null
-  const tetrisTheme = [
-    { freq: 329.63, duration: 0.4 }, // E4
-    { freq: 246.94, duration: 0.2 }, // B3
-    { freq: 261.63, duration: 0.2 }, // C4
-    { freq: 293.66, duration: 0.4 }, // D4
-    { freq: 261.63, duration: 0.2 }, // C4
-    { freq: 246.94, duration: 0.2 }, // B3
-    { freq: 220.00, duration: 0.4 }, // A3
-    { freq: 220.00, duration: 0.2 }, // A3
-    { freq: 261.63, duration: 0.2 }, // C4
-    { freq: 329.63, duration: 0.4 }, // E4
-    { freq: 293.66, duration: 0.2 }, // D4
-    { freq: 261.63, duration: 0.2 }, // C4
-    { freq: 246.94, duration: 0.6 }, // B3
-    { freq: 261.63, duration: 0.2 }, // C4
-    { freq: 293.66, duration: 0.4 }, // D4
-    { freq: 329.63, duration: 0.4 }, // E4
-    { freq: 261.63, duration: 0.4 }, // C4
-    { freq: 220.00, duration: 0.4 }, // A3
-    { freq: 220.00, duration: 0.4 }  // A3
-  ]
+  
+  const musicTracks = {
+    tetris: [
+      { freq: 329.63, duration: 0.4 }, // E4
+      { freq: 246.94, duration: 0.2 }, // B3
+      { freq: 261.63, duration: 0.2 }, // C4
+      { freq: 293.66, duration: 0.4 }, // D4
+      { freq: 261.63, duration: 0.2 }, // C4
+      { freq: 246.94, duration: 0.2 }, // B3
+      { freq: 220.00, duration: 0.4 }, // A3
+      { freq: 220.00, duration: 0.2 }, // A3
+      { freq: 261.63, duration: 0.2 }, // C4
+      { freq: 329.63, duration: 0.4 }, // E4
+      { freq: 293.66, duration: 0.2 }, // D4
+      { freq: 261.63, duration: 0.2 }, // C4
+      { freq: 246.94, duration: 0.6 }, // B3
+      { freq: 261.63, duration: 0.2 }, // C4
+      { freq: 293.66, duration: 0.4 }, // D4
+      { freq: 329.63, duration: 0.4 }, // E4
+      { freq: 261.63, duration: 0.4 }, // C4
+      { freq: 220.00, duration: 0.4 }, // A3
+      { freq: 220.00, duration: 0.4 }  // A3
+    ],
+    arcade: [
+      { freq: 261.63, duration: 0.3 }, // C4
+      { freq: 329.63, duration: 0.3 }, // E4
+      { freq: 392.00, duration: 0.3 }, // G4
+      { freq: 523.25, duration: 0.3 }, // C5
+      { freq: 392.00, duration: 0.3 }, // G4
+      { freq: 329.63, duration: 0.3 }, // E4
+      { freq: 293.66, duration: 0.6 }, // D4
+      { freq: 246.94, duration: 0.3 }, // B3
+      { freq: 293.66, duration: 0.3 }, // D4
+      { freq: 329.63, duration: 0.6 }, // E4
+    ],
+    chill: [
+      { freq: 220.00, duration: 0.8 }, // A3
+      { freq: 246.94, duration: 0.8 }, // B3
+      { freq: 261.63, duration: 0.8 }, // C4
+      { freq: 293.66, duration: 0.8 }, // D4
+      { freq: 329.63, duration: 0.8 }, // E4
+      { freq: 293.66, duration: 0.8 }, // D4
+      { freq: 261.63, duration: 0.8 }, // C4
+      { freq: 246.94, duration: 0.8 }, // B3
+    ],
+    retro: [
+      { freq: 174.61, duration: 0.4 }, // F3
+      { freq: 196.00, duration: 0.4 }, // G3
+      { freq: 220.00, duration: 0.4 }, // A3
+      { freq: 246.94, duration: 0.4 }, // B3
+      { freq: 261.63, duration: 0.4 }, // C4
+      { freq: 293.66, duration: 0.4 }, // D4
+      { freq: 329.63, duration: 0.4 }, // E4
+      { freq: 349.23, duration: 0.4 }, // F4
+      { freq: 329.63, duration: 0.4 }, // E4
+      { freq: 293.66, duration: 0.4 }, // D4
+      { freq: 261.63, duration: 0.4 }, // C4
+      { freq: 246.94, duration: 0.4 }, // B3
+    ]
+  }
   
   let currentNoteIndex = 0
   let musicTimeout: number | null = null
   
   const playNextNote = () => {
-    if (!settings.value.musicEnabled || !audioContext || !musicGainNode) return
+    if (!settings.value.musicEnabled || !audioContext || !musicGainNode || !isMusicPlaying) {
+      return
+    }
     
-    const note = tetrisTheme[currentNoteIndex]
-    const oscillator = audioContext.createOscillator()
-    const envelope = audioContext.createGain()
+    // Check if audio context is suspended
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().then(() => {
+        if (isMusicPlaying && settings.value.musicEnabled) {
+          playNextNote()
+        }
+      }).catch(error => {
+        console.warn('Failed to resume audio context:', error)
+      })
+      return
+    }
     
-    oscillator.type = 'square'
-    oscillator.frequency.setValueAtTime(note.freq, audioContext.currentTime)
+    if (audioContext.state !== 'running') {
+      return
+    }
     
-    envelope.gain.setValueAtTime(0, audioContext.currentTime)
-    envelope.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01)
-    envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + note.duration - 0.01)
-    
-    oscillator.connect(envelope)
-    envelope.connect(musicGainNode)
-    
-    oscillator.start(audioContext.currentTime)
-    oscillator.stop(audioContext.currentTime + note.duration)
-    
-    currentNoteIndex = (currentNoteIndex + 1) % tetrisTheme.length
-    
-    musicTimeout = window.setTimeout(playNextNote, note.duration * 1000)
+    try {
+      const currentTrack = musicTracks[settings.value.currentTrack as keyof typeof musicTracks] || musicTracks.tetris
+      const note = currentTrack[currentNoteIndex]
+      const oscillator = audioContext.createOscillator()
+      const envelope = audioContext.createGain()
+      
+      oscillator.type = 'square'
+      oscillator.frequency.setValueAtTime(note.freq, audioContext.currentTime)
+      
+      envelope.gain.setValueAtTime(0, audioContext.currentTime)
+      envelope.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01)
+      envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + note.duration - 0.01)
+      
+      oscillator.connect(envelope)
+      envelope.connect(musicGainNode)
+      
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + note.duration)
+      
+      currentNoteIndex = (currentNoteIndex + 1) % currentTrack.length
+      
+      // Schedule next note
+      if (isMusicPlaying && settings.value.musicEnabled) {
+        musicTimeout = window.setTimeout(playNextNote, note.duration * 1000)
+      }
+    } catch (error) {
+      console.warn('Error playing note:', error)
+      // Retry after a short delay
+      if (isMusicPlaying && settings.value.musicEnabled) {
+        musicTimeout = window.setTimeout(playNextNote, 500)
+      }
+    }
   }
   
   const startMusic = async () => {
+    if (!settings.value.musicEnabled) return
+    
     await initAudioContext()
-    if (settings.value.musicEnabled && !musicTimeout) {
-      playNextNote()
+    if (!isMusicPlaying) {
+      isMusicPlaying = true
+      if (!musicTimeout) {
+        playNextNote()
+      }
     }
   }
   
   const stopMusic = () => {
+    isMusicPlaying = false
     if (musicTimeout) {
       clearTimeout(musicTimeout)
       musicTimeout = null
     }
     currentNoteIndex = 0
+  }
+  
+  // Add pause music function (separate from stop)
+  const pauseMusic = () => {
+    isMusicPlaying = false
+    if (musicTimeout) {
+      clearTimeout(musicTimeout)
+      musicTimeout = null
+    }
+    // Don't reset currentNoteIndex on pause so music resumes from where it left off
+  }
+  
+  const resumeMusic = async () => {
+    if (settings.value.musicEnabled) {
+      await initAudioContext()
+      isMusicPlaying = true
+      if (!musicTimeout) {
+        playNextNote()
+      }
+    }
   }
   
   // Sound effects
@@ -203,6 +323,27 @@ export function useAudio() {
     saveSettings()
   }
   
+  const setCurrentTrack = (trackId: string) => {
+    settings.value.currentTrack = trackId
+    currentNoteIndex = 0 // Reset to beginning of new track
+    saveSettings()
+    
+    // If music is currently playing, restart with new track
+    if (isMusicPlaying && settings.value.musicEnabled) {
+      stopMusic()
+      startMusic()
+    }
+  }
+  
+  const getAvailableTracks = () => {
+    return [
+      { id: 'tetris', name: 'Classic Tetris', description: 'Original game theme' },
+      { id: 'arcade', name: 'Arcade Beat', description: 'Fast-paced arcade style' },
+      { id: 'chill', name: 'Chill Vibes', description: 'Relaxing ambient theme' },
+      { id: 'retro', name: 'Retro Wave', description: '8-bit nostalgic sound' }
+    ]
+  }
+  
   const saveSettings = () => {
     localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify(settings.value))
   }
@@ -247,7 +388,11 @@ export function useAudio() {
     // Music controls
     startMusic,
     stopMusic,
+    pauseMusic,
+    resumeMusic,
     toggleMusic,
+    setCurrentTrack,
+    getAvailableTracks,
     
     // Sound effects
     playSound,
@@ -261,6 +406,8 @@ export function useAudio() {
     isMusicEnabled: computed(() => settings.value.musicEnabled),
     isSoundEnabled: computed(() => settings.value.soundEnabled),
     musicVolume: computed(() => settings.value.musicVolume),
-    soundVolume: computed(() => settings.value.soundVolume)
+    soundVolume: computed(() => settings.value.soundVolume),
+    isMusicPlaying: computed(() => isMusicPlaying),
+    currentTrack: computed(() => settings.value.currentTrack)
   }
 }

@@ -120,34 +120,40 @@ onUnmounted(() => {
 
 <style scoped>
 .game-controls {
-  margin-top: 15px;
+  margin-top: 20px;
   width: 100%;
-  max-width: 350px;
+  max-width: 400px;
   margin-left: auto;
   margin-right: auto;
+  padding: 0 10px;
 }
 
 .controls-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  max-width: 160px;
-  margin: 0 auto 15px auto;
+  gap: 12px;
+  max-width: 220px;
+  margin: 0 auto 20px auto;
 }
 
 .control-button {
   background: var(--theme-bg, #333);
   color: var(--theme-primary, #00ff00);
-  border: 2px solid var(--theme-primary, #00ff00);
-  width: 45px;
-  height: 45px;
-  font-size: 18px;
+  border: 3px solid var(--theme-primary, #00ff00);
+  width: 60px;
+  height: 60px;
+  font-size: 22px;
   font-family: monospace;
+  font-weight: bold;
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
   transition: all 0.2s ease;
   box-shadow: var(--theme-shadow, none);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .control-button:hover, .control-button:focus {
@@ -163,7 +169,7 @@ onUnmounted(() => {
 
 .action-controls {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -171,16 +177,22 @@ onUnmounted(() => {
 .action-button {
   background: var(--theme-bg, #333);
   color: var(--theme-primary, #00ff00);
-  border: 2px solid var(--theme-primary, #00ff00);
-  padding: 8px 12px;
+  border: 3px solid var(--theme-primary, #00ff00);
+  padding: 12px 20px;
   font-family: monospace;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: bold;
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
-  min-width: 60px;
+  min-width: 80px;
+  min-height: 48px;
   transition: all 0.2s ease;
   box-shadow: var(--theme-shadow, none);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-button:hover, .action-button:focus {
@@ -196,48 +208,51 @@ onUnmounted(() => {
 
 @media (min-width: 480px) {
   .game-controls {
-    margin-top: 20px;
+    margin-top: 25px;
+    padding: 0 20px;
   }
   
   .controls-grid {
-    gap: 10px;
-    max-width: 180px;
-    margin-bottom: 20px;
+    gap: 15px;
+    max-width: 250px;
+    margin-bottom: 25px;
   }
   
   .control-button {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
+    width: 70px;
+    height: 70px;
+    font-size: 26px;
   }
   
   .action-controls {
-    gap: 10px;
+    gap: 15px;
   }
   
   .action-button {
-    padding: 10px 15px;
-    font-size: 14px;
-    min-width: 70px;
+    padding: 15px 25px;
+    font-size: 16px;
+    min-width: 100px;
+    min-height: 52px;
   }
 }
 
 @media (max-width: 320px) {
   .controls-grid {
-    max-width: 140px;
-    gap: 6px;
+    max-width: 200px;
+    gap: 10px;
   }
   
   .control-button {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
+    width: 55px;
+    height: 55px;
+    font-size: 20px;
   }
   
   .action-button {
-    padding: 6px 8px;
-    font-size: 11px;
-    min-width: 50px;
+    padding: 10px 16px;
+    font-size: 12px;
+    min-width: 70px;
+    min-height: 44px;
   }
 }
 </style>
