@@ -4,7 +4,7 @@ import { themes } from '@/types/theme'
 
 const THEME_STORAGE_KEY = 'tetrees-theme'
 
-const currentThemeId = ref<ThemeId>('retro')
+const currentThemeId = ref<ThemeId>('gameboy')
 
 export function useTheme() {
   const currentTheme = computed<Theme>(() => themes[currentThemeId.value])
@@ -48,7 +48,7 @@ export function useTheme() {
     if (saved && themes[saved as ThemeId]) {
       setTheme(saved as ThemeId)
     } else {
-      setTheme('retro')
+      setTheme('gameboy')
     }
   }
   
