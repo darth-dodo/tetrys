@@ -65,9 +65,10 @@ const getCellClass = (cell: TetrominoType | null): string => {
   width: 100%;
   max-width: 300px;
   height: 600px;
-  border: 3px solid #00ff00;
-  background: #000;
+  border: 3px solid var(--theme-border, #00ff00);
+  background: var(--theme-bg, #000);
   margin: 0 auto;
+  box-shadow: var(--theme-shadow, none);
 }
 
 .game-board {
@@ -75,29 +76,30 @@ const getCellClass = (cell: TetrominoType | null): string => {
   height: 100%;
   display: grid;
   gap: 1px;
-  background: #111;
+  background: var(--theme-surface, #111);
   padding: 2px;
 }
 
 .cell {
-  border: 1px solid #333;
+  border: 1px solid var(--theme-border, #333);
   width: 100%;
   height: 100%;
   min-height: 0;
   min-width: 0;
+  transition: background-color 0.1s ease;
 }
 
 .empty {
-  background: #000;
+  background: var(--theme-bg, #000);
 }
 
-.piece-i { background: #00ffff; }
-.piece-o { background: #ffff00; }
-.piece-t { background: #ff00ff; }
-.piece-s { background: #00ff00; }
-.piece-z { background: #ff0000; }
-.piece-j { background: #0000ff; }
-.piece-l { background: #ff8000; }
+.piece-i { background: var(--piece-i, #00ffff); }
+.piece-o { background: var(--piece-o, #ffff00); }
+.piece-t { background: var(--piece-t, #ff00ff); }
+.piece-s { background: var(--piece-s, #00ff00); }
+.piece-z { background: var(--piece-z, #ff0000); }
+.piece-j { background: var(--piece-j, #0000ff); }
+.piece-l { background: var(--piece-l, #ff8000); }
 
 @media (max-width: 480px) {
   .game-board-container {

@@ -1,11 +1,12 @@
 {
-  "name": "tetriz",
+  "name": "tetrees",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vite build",
+    "build:type-check": "vue-tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",

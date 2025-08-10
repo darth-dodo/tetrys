@@ -136,9 +136,9 @@ onUnmounted(() => {
 }
 
 .control-button {
-  background: #333;
-  color: #00ff00;
-  border: 2px solid #00ff00;
+  background: var(--theme-bg, #333);
+  color: var(--theme-primary, #00ff00);
+  border: 2px solid var(--theme-primary, #00ff00);
   width: 45px;
   height: 45px;
   font-size: 18px;
@@ -146,16 +146,18 @@ onUnmounted(() => {
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
+  transition: all 0.2s ease;
+  box-shadow: var(--theme-shadow, none);
 }
 
 .control-button:hover, .control-button:focus {
-  background: #00ff00;
-  color: #000;
+  background: var(--theme-primary, #00ff00);
+  color: var(--theme-bg, #000);
   outline: none;
 }
 
 .control-button:active {
-  background: #008800;
+  background: var(--theme-secondary, #008800);
   transform: scale(0.95);
 }
 
@@ -167,9 +169,9 @@ onUnmounted(() => {
 }
 
 .action-button {
-  background: #333;
-  color: #00ff00;
-  border: 2px solid #00ff00;
+  background: var(--theme-bg, #333);
+  color: var(--theme-primary, #00ff00);
+  border: 2px solid var(--theme-primary, #00ff00);
   padding: 8px 12px;
   font-family: monospace;
   font-size: 12px;
@@ -177,16 +179,18 @@ onUnmounted(() => {
   touch-action: manipulation;
   user-select: none;
   min-width: 60px;
+  transition: all 0.2s ease;
+  box-shadow: var(--theme-shadow, none);
 }
 
 .action-button:hover, .action-button:focus {
-  background: #00ff00;
-  color: #000;
+  background: var(--theme-primary, #00ff00);
+  color: var(--theme-bg, #000);
   outline: none;
 }
 
 .action-button:active {
-  background: #008800;
+  background: var(--theme-secondary, #008800);
   transform: scale(0.95);
 }
 

@@ -65,18 +65,20 @@ const renderGrid = computed(() => {
 
 <style scoped>
 .next-piece-container {
-  background: #111;
-  border: 2px solid #00ff00;
+  background: var(--theme-surface, #111);
+  border: 2px solid var(--theme-border, #00ff00);
   padding: 10px;
   min-width: 70px;
   flex: 1;
+  box-shadow: var(--theme-shadow, none);
 }
 
 .label {
-  color: #00ff00;
+  color: var(--theme-primary, #00ff00);
   font-size: 10px;
   font-family: monospace;
   margin-bottom: 8px;
+  text-shadow: var(--theme-glow, none);
 }
 
 .preview {
@@ -100,13 +102,13 @@ const renderGrid = computed(() => {
   background: transparent;
 }
 
-.piece-i { background: #00ffff; }
-.piece-o { background: #ffff00; }
-.piece-t { background: #ff00ff; }
-.piece-s { background: #00ff00; }
-.piece-z { background: #ff0000; }
-.piece-j { background: #0000ff; }
-.piece-l { background: #ff8000; }
+.piece-i { background: var(--piece-i, #00ffff); }
+.piece-o { background: var(--piece-o, #ffff00); }
+.piece-t { background: var(--piece-t, #ff00ff); }
+.piece-s { background: var(--piece-s, #00ff00); }
+.piece-z { background: var(--piece-z, #ff0000); }
+.piece-j { background: var(--piece-j, #0000ff); }
+.piece-l { background: var(--piece-l, #ff8000); }
 
 @media (min-width: 480px) {
   .next-piece-container {

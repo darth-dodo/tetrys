@@ -37,11 +37,12 @@ const formatNumber = (num: number): string => {
 
 <style scoped>
 .scoreboard {
-  background: #111;
-  border: 2px solid #00ff00;
+  background: var(--theme-surface, #111);
+  border: 2px solid var(--theme-border, #00ff00);
   padding: 10px;
   min-width: 100px;
   flex: 1;
+  box-shadow: var(--theme-shadow, none);
 }
 
 .stat {
@@ -53,14 +54,15 @@ const formatNumber = (num: number): string => {
 }
 
 .label {
-  color: #00ff00;
+  color: var(--theme-primary, #00ff00);
   font-size: 10px;
   font-family: monospace;
   margin-bottom: 2px;
+  text-shadow: var(--theme-glow, none);
 }
 
 .value {
-  color: #fff;
+  color: var(--theme-text, #fff);
   font-size: 14px;
   font-family: monospace;
   font-weight: bold;

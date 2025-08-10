@@ -1,8 +1,30 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1 class="title">TETRIS</h1>
+      <h1 class="title">TETREES</h1>
+      <div class="header-controls">
+        <button class="settings-button" @click="showSettings = !showSettings">
+          ⚙️ SETTINGS
+        </button>
+      </div>
     </header>
+
+    <!-- Settings Panel -->
+    <div v-if="showSettings" class="settings-panel">
+      <div class="settings-content">
+        <div class="settings-section">
+          <ThemeSelector />
+        </div>
+        <div class="settings-section">
+          <AudioControls />
+        </div>
+        <div class="settings-actions">
+          <button class="close-button" @click="showSettings = false">
+            CLOSE
+          </button>
+        </div>
+      </div>
+    </div>
 
     <main class="game-container">
       <!-- Game Over Screen -->
@@ -37,11 +59,11 @@
         
         <GameControls
           :game-state="gameState"
-          @move-left="movePiece(-1, 0)"
-          @move-right="movePiece(1, 0)"
-          @move-down="movePiece(0, 1)"
-          @rotate="rotatePiece"
-          @drop="dropPiece"
+          @move-left="handleMove('left')"
+          @move-right="handleMove('right')"
+          @move-down="handleMove('down')"
+          @rotate="handleRotate"
+          @drop="handleDrop"
           @start="startGame"
           @pause="pauseGame"
           @restart="restartGame"
@@ -50,20 +72,39 @@
 
       <!-- Start Screen -->
       <div v-if="!gameState.isPlaying && !gameState.isGameOver" class="start-screen">
-        <h2>CLASSIC TETRIS</h2>
+        <h2>CLASSIC TETREES</h2>
         <p>Drop blocks to clear lines</p>
-        <button @click="startGame">START GAME</button>
+        <div class="start-options">
+          <button @click="startGame">START GAME</button>
+          <button @click="showSettings = true" class="secondary-button">
+            SETTINGS
+          </button>
+        </div>
       </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useTetris } from '@/composables/useTetris'
+import { useTheme } from '@/composables/useTheme'
+import { useAudio } from '@/composables/useAudio'
 import GameBoard from '@/components/GameBoard.vue'
 import GameControls from '@/components/GameControls.vue'
 import NextPiece from '@/components/NextPiece.vue'
 import ScoreBoard from '@/components/ScoreBoard.vue'
+import ThemeSelector from '@/components/ThemeSelector.vue'
+import AudioControls from '@/components/AudioControls.vue'
+
+// Settings panel state
+const showSettings = ref(false)
+
+// Initialize theme system
+useTheme()
+
+// Use audio system
+const { playSound, startMusic, stopMusic } = useAudio()
 
 // Use the Tetris game logic
 const {
@@ -71,17 +112,52 @@ const {
   movePiece,
   rotatePiece,
   dropPiece,
-  startGame,
-  pauseGame,
+  startGame: originalStartGame,
+  pauseGame: originalPauseGame,
   resetGame
 } = useTetris()
+
+// Enhanced game controls with audio feedback
+const handleMove = (direction: 'left' | 'right' | 'down') => {
+  const moved = movePiece(
+    direction === 'left' ? -1 : direction === 'right' ? 1 : 0,
+    direction === 'down' ? 1 : 0
+  )
+  if (moved) {
+    playSound('move')
+  }
+}
+
+const handleRotate = () => {
+  rotatePiece()
+  playSound('rotate')
+}
+
+const handleDrop = () => {
+  dropPiece()
+  playSound('drop')
+}
+
+const startGame = () => {
+  originalStartGame()
+  startMusic()
+}
+
+const pauseGame = () => {
+  originalPauseGame()
+  if (gameState.isPaused) {
+    stopMusic()
+  } else {
+    startMusic()
+  }
+}
 
 // Format score for display
 const formatScore = (score: number): string => {
   return score.toLocaleString()
 }
 
-// Restart game
+// Restart game with audio
 const restartGame = (): void => {
   resetGame()
   startGame()
@@ -107,25 +183,103 @@ document.addEventListener('touchend', (e) => {
 
 <style scoped>
 .app {
-  background: #000;
-  color: #fff;
+  background: var(--theme-bg, #000);
+  color: var(--theme-text, #fff);
   min-height: 100vh;
   font-family: monospace;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 20px;
-  background: #111;
-  border-bottom: 2px solid #333;
+  background: var(--theme-surface, #111);
+  border-bottom: 2px solid var(--theme-border, #333);
 }
 
 .title {
   font-size: 32px;
   font-weight: bold;
   margin: 0;
-  color: #00ff00;
-  text-shadow: 0 0 10px #00ff00;
+  color: var(--theme-primary, #00ff00);
+  text-shadow: var(--theme-glow, none);
+}
+
+.header-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.settings-button {
+  background: var(--theme-bg, #000);
+  color: var(--theme-primary, #00ff00);
+  border: 2px solid var(--theme-primary, #00ff00);
+  padding: 8px 12px;
+  font-family: monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-button:hover {
+  background: var(--theme-primary, #00ff00);
+  color: var(--theme-bg, #000);
+}
+
+.settings-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.settings-content {
+  background: var(--theme-surface, #111);
+  border: 2px solid var(--theme-border, #00ff00);
+  padding: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-section {
+  flex: 1;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--theme-border, #00ff00);
+}
+
+.close-button {
+  background: var(--theme-bg, #000);
+  color: var(--theme-primary, #00ff00);
+  border: 2px solid var(--theme-primary, #00ff00);
+  padding: 10px 20px;
+  font-family: monospace;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: var(--theme-primary, #00ff00);
+  color: var(--theme-bg, #000);
 }
 
 .game-container {
@@ -153,15 +307,15 @@ document.addEventListener('touchend', (e) => {
 }
 
 .modal {
-  background: #111;
-  border: 2px solid #00ff00;
+  background: var(--theme-surface, #111);
+  border: 2px solid var(--theme-border, #00ff00);
   padding: 30px;
   text-align: center;
   min-width: 200px;
 }
 
 .modal h2 {
-  color: #ff0000;
+  color: var(--theme-accent, #ff0000);
   margin: 0 0 20px 0;
   font-size: 24px;
 }
@@ -172,23 +326,42 @@ document.addEventListener('touchend', (e) => {
 
 .stats p {
   margin: 5px 0;
-  color: #ffff00;
+  color: var(--theme-accent, #ffff00);
 }
 
 .modal button, .start-screen button {
-  background: #333;
-  color: #00ff00;
-  border: 2px solid #00ff00;
+  background: var(--theme-bg, #333);
+  color: var(--theme-primary, #00ff00);
+  border: 2px solid var(--theme-primary, #00ff00);
   padding: 10px 20px;
   font-family: monospace;
   font-size: 16px;
   cursor: pointer;
   margin-top: 10px;
+  transition: all 0.2s ease;
 }
 
 .modal button:hover, .start-screen button:hover {
-  background: #00ff00;
-  color: #000;
+  background: var(--theme-primary, #00ff00);
+  color: var(--theme-bg, #000);
+}
+
+.secondary-button {
+  background: var(--theme-surface, #111) !important;
+  color: var(--theme-text-secondary, #ccc) !important;
+  border-color: var(--theme-text-secondary, #ccc) !important;
+}
+
+.secondary-button:hover {
+  background: var(--theme-text-secondary, #ccc) !important;
+  color: var(--theme-bg, #000) !important;
+}
+
+.start-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
 }
 
 .game-layout {
