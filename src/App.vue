@@ -212,10 +212,15 @@ const startGame = () => {
 }
 
 const pauseGame = () => {
+  const wasPaused = gameState.value.isPaused
   originalPauseGame()
-  if (gameState.isPaused) {
+  
+  // Audio logic based on the NEW state (after toggle)
+  if (gameState.value.isPaused) {
+    // Game just got paused
     pauseMusic()
   } else {
+    // Game just got resumed
     resumeMusic()
   }
 }
