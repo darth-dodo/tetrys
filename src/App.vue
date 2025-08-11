@@ -1,6 +1,7 @@
 <template>
   <div class="app">
-    <header class="header">
+    <!-- Header only shown during gameplay -->
+    <header class="header" v-if="gameState.isPlaying || gameState.isGameOver">
       <h1 class="title">TETREES</h1>
       <div class="header-controls">
         <button class="settings-button" @click="showSettings = !showSettings">
@@ -79,36 +80,31 @@
 
       <!-- Start Screen -->
       <div v-if="!gameState.isPlaying && !gameState.isGameOver" class="start-screen">
-        <div class="logo-container">
-          <h1 class="game-logo">TETREES</h1>
-          <div class="logo-subtitle">Classic Block Puzzle</div>
-        </div>
-        
-        <div class="game-preview">
-          <div class="preview-grid">
-            <div class="preview-block t-piece"></div>
-            <div class="preview-block i-piece"></div>
-            <div class="preview-block o-piece"></div>
-            <div class="preview-block l-piece"></div>
+        <div class="landing-container">
+          <div class="logo-container">
+            <h1 class="game-logo">TETREES</h1>
+            <div class="logo-subtitle">Classic Block Puzzle</div>
           </div>
-        </div>
-        
-        <div class="game-description">
-          <p>Stack falling blocks to clear lines</p>
-          <p>The classic puzzle game reimagined</p>
-        </div>
-        
-        <div class="start-options">
-          <button @click="startGame" class="start-button">
-            ▶ START GAME
-          </button>
-          <button @click="showSettings = true" class="settings-button">
-            ⚙ SETTINGS
-          </button>
-        </div>
-        
-        <div class="controls-hint">
-          <div class="hint-row">
+          
+          <div class="game-preview">
+            <div class="preview-grid">
+              <div class="preview-block t-piece"></div>
+              <div class="preview-block i-piece"></div>
+              <div class="preview-block o-piece"></div>
+              <div class="preview-block l-piece"></div>
+            </div>
+          </div>
+          
+          <div class="start-actions">
+            <button @click="startGame" class="start-button primary">
+              ▶ START GAME
+            </button>
+            <button @click="showSettings = true" class="settings-button secondary">
+              ⚙ SETTINGS
+            </button>
+          </div>
+          
+          <div class="controls-hint">
             <span class="key">←→↓</span> Move • <span class="key">↑</span> Rotate • <span class="key">P</span> Pause
           </div>
         </div>
@@ -412,12 +408,6 @@ document.addEventListener('touchend', (e) => {
   color: var(--theme-bg, #000) !important;
 }
 
-.start-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-}
 
 .game-layout {
   display: flex;
@@ -437,35 +427,44 @@ document.addEventListener('touchend', (e) => {
 }
 
 .start-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 0 20px;
+}
+
+.landing-container {
   text-align: center;
-  padding: 30px 20px;
-  max-width: 400px;
-  margin: 0 auto;
+  max-width: 500px;
+  width: 100%;
 }
 
 .logo-container {
-  margin-bottom: 30px;
+  margin-bottom: 60px;
 }
 
 .game-logo {
   color: var(--theme-primary, #00ff00);
-  font-size: 48px;
+  font-size: 72px;
   font-weight: 900;
-  margin: 0;
-  text-shadow: var(--theme-glow, 0 0 20px rgba(0, 255, 0, 0.3));
-  letter-spacing: 2px;
+  margin: 0 0 12px 0;
+  text-shadow: var(--theme-glow, 0 0 30px rgba(0, 255, 0, 0.4));
+  letter-spacing: 4px;
+  font-family: monospace;
 }
 
 .logo-subtitle {
   color: var(--theme-text-secondary, #ccc);
-  font-size: 14px;
-  margin-top: 5px;
-  text-transform: uppercase;
+  font-size: 18px;
+  font-family: monospace;
+  font-weight: 300;
+  opacity: 0.9;
   letter-spacing: 1px;
 }
 
 .game-preview {
-  margin: 30px 0;
+  margin: 40px 0;
   display: flex;
   justify-content: center;
 }
@@ -501,8 +500,8 @@ document.addEventListener('touchend', (e) => {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
 }
 
 .game-description {
@@ -516,12 +515,12 @@ document.addEventListener('touchend', (e) => {
   line-height: 1.4;
 }
 
-.start-options {
+.start-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
-  margin: 30px 0;
+  margin: 45px 0 35px 0;
 }
 
 .start-button {
@@ -573,17 +572,15 @@ document.addEventListener('touchend', (e) => {
 }
 
 .controls-hint {
-  margin-top: 25px;
-  padding-top: 20px;
+  margin-top: 35px;
+  padding-top: 25px;
   border-top: 1px solid var(--theme-border, #333);
-}
-
-.hint-row {
   color: var(--theme-text-secondary, #888);
   font-size: 12px;
   font-family: monospace;
   line-height: 1.4;
 }
+
 
 .key {
   background: var(--theme-surface, #111);
