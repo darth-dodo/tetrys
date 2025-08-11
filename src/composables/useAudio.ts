@@ -8,7 +8,7 @@ interface AudioSettings {
   currentTrack: string
 }
 
-const AUDIO_STORAGE_KEY = 'tetrees-audio-settings'
+const AUDIO_STORAGE_KEY = 'tetrys-audio-settings'
 const DEFAULT_SETTINGS: AudioSettings = {
   musicEnabled: false,
   soundEnabled: true,

@@ -1,7 +1,7 @@
-# Tetrees Game Enhancement Tasks
+# Tetrys Game Enhancement Tasks
 
 ## Overview
-Comprehensive enhancement plan for Tetrees game focusing on user experience improvements, audio fixes, and leaderboard functionality.
+Comprehensive enhancement plan for Tetrys game focusing on user experience improvements, audio fixes, and leaderboard functionality.
 
 ## Task Prioritization Matrix
 

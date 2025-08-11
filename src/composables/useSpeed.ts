@@ -1,6 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 
-const SPEED_STORAGE_KEY = 'tetrees-speed-setting'
+const SPEED_STORAGE_KEY = 'tetrys-speed-setting'
 const DEFAULT_SPEED = 1
 
 // Speed multiplier (shared across all instances)

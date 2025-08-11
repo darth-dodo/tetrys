@@ -1,4 +1,4 @@
-# Tetrees - Mobile Responsive Retro Tetris
+# Tetrys - Mobile Responsive Retro Tetris
 
 A modern implementation of the classic Tetris game built with Vue 3, TypeScript, and Tailwind CSS. Features multiple themes, 8-bit audio, and optimized mobile controls.
 

@@ -2,7 +2,7 @@
   <div class="app">
     <!-- Header only shown during gameplay -->
     <header class="header" v-if="gameState.isPlaying || gameState.isGameOver">
-      <h1 class="title">TETREES</h1>
+      <h1 class="title">TETRYS</h1>
       <div class="header-controls">
         <button class="settings-button" @click="showSettings = !showSettings">
           ⚙️ SETTINGS
@@ -82,7 +82,7 @@
       <div v-if="!gameState.isPlaying && !gameState.isGameOver" class="start-screen">
         <div class="landing-container">
           <div class="logo-container">
-            <h1 class="game-logo">TETREES</h1>
+            <h1 class="game-logo">TETRYS</h1>
             <div class="logo-subtitle">Classic Block Puzzle</div>
           </div>
           

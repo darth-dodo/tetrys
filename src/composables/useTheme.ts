@@ -2,7 +2,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import type { Theme, ThemeId } from '@/types/theme'
 import { themes } from '@/types/theme'
 
-const THEME_STORAGE_KEY = 'tetrees-theme'
+const THEME_STORAGE_KEY = 'tetrys-theme'
 
 const currentThemeId = ref<ThemeId>('gameboy')
 
