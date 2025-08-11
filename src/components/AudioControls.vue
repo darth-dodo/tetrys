@@ -21,7 +21,7 @@
           max="1"
           step="0.1"
           :value="musicVolume"
-          @input="setMusicVolume(parseFloat(($event.target as HTMLInputElement).value))"
+          @input="(e) => setMusicVolume(parseFloat((e.target as HTMLInputElement).value))"
           class="volume-slider"
         />
         <span class="volume-label">{{ Math.round(musicVolume * 100) }}%</span>
@@ -47,7 +47,7 @@
           max="1"
           step="0.1"
           :value="soundVolume"
-          @input="setSoundVolume(parseFloat(($event.target as HTMLInputElement).value))"
+          @input="(e) => setSoundVolume(parseFloat((e.target as HTMLInputElement).value))"
           class="volume-slider"
         />
         <span class="volume-label">{{ Math.round(soundVolume * 100) }}%</span>

@@ -39,7 +39,7 @@ const trackPositions: Record<string, number> = {
 const settings = ref<AudioSettings>({ ...DEFAULT_SETTINGS })
 
 export function useAudio() {
-  // Initialize audio context with proper coordination
+  // Enhanced audio context initialization with user interaction handling
   const initAudioContext = async (): Promise<boolean> => {
     // Prevent concurrent initialization attempts
     if (initializationInProgress) {
@@ -83,10 +83,11 @@ export function useAudio() {
       }
     }
     
-    // Resume context if suspended
+    // Always try to resume context if suspended
     if (audioContext && audioContext.state === 'suspended') {
       try {
         await audioContext.resume()
+        console.log('Audio context resumed, state:', audioContext.state)
         // Check if resume was successful
         return audioContext.state !== 'suspended'
       } catch (error) {
@@ -96,6 +97,26 @@ export function useAudio() {
     }
     
     return isAudioContextInitialized
+  }
+  
+  // Ensure audio context resumes on user interaction
+  const ensureAudioContextRunning = async (): Promise<boolean> => {
+    if (!audioContext) {
+      return await initAudioContext()
+    }
+    
+    if (audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume()
+        console.log('Audio context resumed on interaction, state:', audioContext.state)
+        return audioContext.state !== 'suspended'
+      } catch (error) {
+        console.warn('Failed to resume audio context on interaction:', error)
+        return false
+      }
+    }
+    
+    return audioContext.state === 'running'
   }
   
   const updateVolumes = () => {
@@ -327,10 +348,14 @@ export function useAudio() {
   const playSound = async (type: 'move' | 'rotate' | 'drop' | 'line' | 'gameover') => {
     if (!settings.value.soundEnabled) return
     
-    const initialized = await initAudioContext()
-    if (!initialized) {
-      console.warn('Could not initialize audio context for sound effects')
-      return
+    // Ensure audio context is running
+    const isRunning = await ensureAudioContextRunning()
+    if (!isRunning) {
+      const initialized = await initAudioContext()
+      if (!initialized) {
+        console.warn('Could not initialize audio context for sound effects')
+        return
+      }
     }
     
     switch (type) {
@@ -356,6 +381,9 @@ export function useAudio() {
   
   // Settings management
   const toggleMusic = async () => {
+    // Ensure audio context is running from user interaction
+    await ensureAudioContextRunning()
+    
     settings.value.musicEnabled = !settings.value.musicEnabled
     
     if (settings.value.musicEnabled) {
@@ -382,19 +410,28 @@ export function useAudio() {
     saveSettings()
   }
   
-  const setMusicVolume = (volume: number) => {
+  const setMusicVolume = async (volume: number) => {
+    // Ensure audio context is running from user interaction
+    await ensureAudioContextRunning()
+    
     settings.value.musicVolume = Math.max(0, Math.min(1, volume))
     updateVolumes()
     saveSettings()
   }
   
-  const setSoundVolume = (volume: number) => {
+  const setSoundVolume = async (volume: number) => {
+    // Ensure audio context is running from user interaction
+    await ensureAudioContextRunning()
+    
     settings.value.soundVolume = Math.max(0, Math.min(1, volume))
     updateVolumes()
     saveSettings()
   }
   
   const setCurrentTrack = async (trackId: string) => {
+    // Ensure audio context is running from user interaction
+    await ensureAudioContextRunning()
+    
     // Save current position for the current track
     trackPositions[currentTrackId] = currentNoteIndex
     
@@ -497,6 +534,9 @@ export function useAudio() {
     // Volume controls
     setMusicVolume,
     setSoundVolume,
+    
+    // Audio context management
+    ensureAudioContextRunning,
     
     // Computed properties
     isMusicEnabled: computed(() => settings.value.musicEnabled),

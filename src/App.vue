@@ -26,7 +26,7 @@
           />
         </div>
         <div class="settings-actions">
-          <button class="close-button" @click="showSettings = false">
+          <button class="close-button" @click="closeSettings">
             CLOSE
           </button>
         </div>
@@ -212,6 +212,16 @@ const restartGame = (): void => {
 // Reset game without starting a new one
 const handleReset = (): void => {
   resetGame()
+}
+
+// Handle settings panel close with audio context resume
+const closeSettings = async (): Promise<void> => {
+  showSettings.value = false
+  
+  // Ensure music continues playing if it was enabled and the game is running
+  if (gameState.value.isPlaying && isMusicEnabled.value && !gameState.value.isPaused) {
+    await resumeMusic()
+  }
 }
 
 // Prevent context menu on long press (mobile)
