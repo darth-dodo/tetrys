@@ -1,4 +1,4 @@
-# Deployment Instructions for tetrees
+# Deployment Instructions for tetrys
 
 ## Quick Deploy to Netlify
 
@@ -6,7 +6,7 @@
 
 1. **Push to GitHub**:
    ```bash
-   git remote add origin https://github.com/yourusername/tetrees.git
+   git remote add origin https://github.com/yourusername/tetrys.git
    git branch -M main
    git push -u origin main
    ```
@@ -14,7 +14,7 @@
 2. **Set up Netlify**:
    - Go to [netlify.com](https://netlify.com) and sign up/login
    - Connect your GitHub account
-   - Click "New site from Git" → Select your tetrees repository
+   - Click "New site from Git" → Select your tetrys repository
    - Netlify will auto-detect the build settings from `netlify.toml`
 
 3. **Configure GitHub Secrets**:
