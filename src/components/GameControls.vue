@@ -9,6 +9,11 @@
         @touchstart="handleTouchStart($event, 'rotate')"
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
+        :disabled="!gameState.isPlaying || gameState.isPaused"
+        aria-label="Rotate piece"
+        type="button"
+        role="button"
+        tabindex="0"
       >↻</button>
       <div></div>
       
@@ -18,6 +23,11 @@
         @touchstart="handleTouchStart($event, 'left')"
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
+        :disabled="!gameState.isPlaying || gameState.isPaused"
+        aria-label="Move piece left"
+        type="button"
+        role="button"
+        tabindex="0"
       >←</button>
       <button 
         class="control-button" 
@@ -25,6 +35,11 @@
         @touchstart="handleTouchStart($event, 'down')"
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
+        :disabled="!gameState.isPlaying || gameState.isPaused"
+        aria-label="Move piece down"
+        type="button"
+        role="button"
+        tabindex="0"
       >↓</button>
       <button 
         class="control-button" 
@@ -32,6 +47,11 @@
         @touchstart="handleTouchStart($event, 'right')"
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
+        :disabled="!gameState.isPlaying || gameState.isPaused"
+        aria-label="Move piece right"
+        type="button"
+        role="button"
+        tabindex="0"
       >→</button>
     </div>
 
@@ -43,14 +63,24 @@
         @touchstart="handleTouchStart($event, 'drop')"
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
+        :disabled="!gameState.isPlaying || gameState.isPaused"
+        aria-label="Drop piece to bottom"
+        type="button"
+        role="button"
+        tabindex="0"
       >DROP</button>
       <button 
         class="action-button pause-button" 
-        @click="$emit('pause')" 
+        @click="handlePause" 
         @touchstart="handleTouchStart($event, 'pause')"
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
         v-if="gameState.isPlaying"
+        :aria-label="gameState.isPaused ? 'Resume game' : 'Pause game'"
+        :aria-pressed="gameState.isPaused"
+        type="button"
+        role="button"
+        tabindex="0"
       >
         {{ gameState.isPaused ? 'RESUME' : 'PAUSE' }}
       </button>
@@ -61,21 +91,48 @@
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
         v-if="gameState.isPlaying"
+        aria-label="Reset current game"
+        type="button"
+        role="button"
+        tabindex="0"
       >
         RESET
       </button>
     </div>
 
     <!-- Reset Confirmation Modal -->
-    <div v-if="showResetConfirm" class="reset-modal-overlay" @click="showResetConfirm = false">
+    <div 
+      v-if="showResetConfirm" 
+      class="reset-modal-overlay" 
+      @click="showResetConfirm = false"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reset-modal-title"
+      aria-describedby="reset-modal-description"
+    >
       <div class="reset-modal" @click.stop>
-        <h3>Reset Game?</h3>
-        <p>Are you sure you want to reset the current game? This will clear your progress.</p>
+        <h3 id="reset-modal-title">Reset Game?</h3>
+        <p id="reset-modal-description">Are you sure you want to reset the current game? This will clear your progress.</p>
         <div class="reset-modal-actions">
-          <button class="modal-button cancel-button" @click="showResetConfirm = false">
+          <button 
+            class="modal-button cancel-button" 
+            @click="showResetConfirm = false"
+            type="button"
+            role="button"
+            tabindex="0"
+            aria-label="Cancel reset and continue playing"
+          >
             CANCEL
           </button>
-          <button class="modal-button reset-confirm-button" @click="confirmReset">
+          <button 
+            class="modal-button reset-confirm-button" 
+            @click="confirmReset"
+            type="button"
+            role="button"
+            tabindex="0"
+            aria-label="Confirm reset and start new game"
+            ref="resetConfirmButton"
+          >
             RESET
           </button>
         </div>
@@ -85,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import type { GameState } from '@/types/tetris'
 
 interface Props {
@@ -109,6 +166,7 @@ const emit = defineEmits<Emits>()
 
 // Reset confirmation modal state
 const showResetConfirm = ref(false)
+const resetConfirmButton = ref<HTMLElement | null>(null)
 
 // Touch interaction state
 const touchState = ref({
@@ -162,7 +220,7 @@ const handleTouchEnd = (e?: TouchEvent) => {
           handleDrop()
           break
         case 'pause':
-          emit('pause')
+          handlePause()
           break
         case 'reset':
           showResetConfirm.value = true
@@ -203,9 +261,29 @@ const handleDrop = () => {
   emit('drop')
 }
 
+const handlePause = () => {
+  if (!props.gameState.isPlaying) return
+  emit('pause')
+}
+
 const confirmReset = () => {
   showResetConfirm.value = false
   emit('reset')
+}
+
+// Focus management for modal
+watch(showResetConfirm, async (isVisible) => {
+  if (isVisible) {
+    await nextTick()
+    resetConfirmButton.value?.focus()
+  }
+})
+
+// Handle escape key for modal
+const handleModalKeyDown = (e: KeyboardEvent) => {
+  if (showResetConfirm.value && e.key === 'Escape') {
+    showResetConfirm.value = false
+  }
 }
 
 
@@ -241,17 +319,19 @@ const handleKeyDown = (e: KeyboardEvent) => {
       break
     case 'KeyP':
       e.preventDefault()
-      emit('pause')
+      handlePause()
       break
   }
 }
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keydown', handleModalKeyDown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keydown', handleModalKeyDown)
 })
 </script>
 
@@ -293,14 +373,44 @@ onUnmounted(() => {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  /* Improved accessibility */
+  min-width: 48px;
+  min-height: 48px;
+  line-height: 1;
+  text-align: center;
 }
 
 .control-button:hover, .control-button:focus {
   background: var(--theme-primary, #00ff00);
   color: var(--theme-bg, #000);
-  outline: none;
+  outline: 3px solid var(--theme-accent, #ffff00);
+  outline-offset: 2px;
   transform: translateY(-2px);
   box-shadow: var(--theme-shadow, 0 6px 0 var(--theme-secondary, #008800));
+}
+
+.control-button:focus-visible {
+  outline: 3px solid var(--theme-accent, #ffff00);
+  outline-offset: 2px;
+}
+
+.control-button:disabled {
+  background: var(--theme-surface, #333);
+  color: var(--theme-text-secondary, #666);
+  border-color: var(--theme-text-secondary, #666);
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
+.control-button:disabled:hover,
+.control-button:disabled:focus {
+  background: var(--theme-surface, #333);
+  color: var(--theme-text-secondary, #666);
+  transform: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .control-button:active,
@@ -361,14 +471,43 @@ onUnmounted(() => {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  /* Improved accessibility */
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .action-button:hover, .action-button:focus {
   background: var(--theme-primary, #00ff00);
   color: var(--theme-bg, #000);
-  outline: none;
+  outline: 3px solid var(--theme-accent, #ffff00);
+  outline-offset: 2px;
   transform: translateY(-2px);
   box-shadow: var(--theme-shadow, 0 6px 0 var(--theme-secondary, #008800));
+}
+
+.action-button:focus-visible {
+  outline: 3px solid var(--theme-accent, #ffff00);
+  outline-offset: 2px;
+}
+
+.action-button:disabled {
+  background: var(--theme-surface, #333);
+  color: var(--theme-text-secondary, #666);
+  border-color: var(--theme-text-secondary, #666);
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
+.action-button:disabled:hover,
+.action-button:disabled:focus {
+  background: var(--theme-surface, #333);
+  color: var(--theme-text-secondary, #666);
+  transform: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .action-button:active,
@@ -434,6 +573,13 @@ onUnmounted(() => {
   background: #4CAF50;
   color: var(--theme-bg, #000);
   box-shadow: 0 6px 0 #2E7D32;
+  outline: 3px solid #81C784;
+  outline-offset: 2px;
+}
+
+.drop-button:focus-visible {
+  outline: 3px solid #81C784;
+  outline-offset: 2px;
 }
 
 .drop-button:active,
@@ -453,6 +599,26 @@ onUnmounted(() => {
   background: #FF9800;
   color: var(--theme-bg, #000);
   box-shadow: 0 6px 0 #F57C00;
+  outline: 3px solid #FFB74D;
+  outline-offset: 2px;
+}
+
+.pause-button:focus-visible {
+  outline: 3px solid #FFB74D;
+  outline-offset: 2px;
+}
+
+.pause-button[aria-pressed="true"] {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  box-shadow: 0 4px 0 #2E7D32;
+}
+
+.pause-button[aria-pressed="true"]:hover,
+.pause-button[aria-pressed="true"]:focus {
+  background: #66BB6A;
+  box-shadow: 0 6px 0 #2E7D32;
+  outline: 3px solid #81C784;
 }
 
 .pause-button:active,
@@ -472,6 +638,13 @@ onUnmounted(() => {
   background: #ff6b6b;
   color: var(--theme-bg, #000);
   box-shadow: 0 6px 0 #ff5252;
+  outline: 3px solid #FF8A80;
+  outline-offset: 2px;
+}
+
+.reset-button:focus-visible {
+  outline: 3px solid #FF8A80;
+  outline-offset: 2px;
 }
 
 .reset-button:active,
@@ -553,6 +726,13 @@ onUnmounted(() => {
 .cancel-button:hover, .cancel-button:focus {
   background: var(--theme-text-secondary, #999);
   color: var(--theme-bg, #000);
+  outline: 2px solid var(--theme-text, #fff);
+  outline-offset: 2px;
+}
+
+.cancel-button:focus-visible {
+  outline: 2px solid var(--theme-text, #fff);
+  outline-offset: 2px;
 }
 
 .reset-confirm-button {
@@ -564,13 +744,20 @@ onUnmounted(() => {
 .reset-confirm-button:hover, .reset-confirm-button:focus {
   background: #ff6b6b;
   color: var(--theme-bg, #000);
+  outline: 2px solid #FF8A80;
+  outline-offset: 2px;
+}
+
+.reset-confirm-button:focus-visible {
+  outline: 2px solid #FF8A80;
+  outline-offset: 2px;
 }
 
 .modal-button:active {
   transform: scale(0.95);
 }
 
-/* Mobile-first responsive adjustments */
+/* Mobile-first responsive adjustments - maintain WCAG touch target sizes */
 @media (max-width: 360px) {
   .controls-grid {
     max-width: 220px;
@@ -578,16 +765,20 @@ onUnmounted(() => {
   }
   
   .control-button {
-    width: 65px;
-    height: 65px;
+    width: 68px;
+    height: 68px;
     font-size: 22px;
+    /* Maintain minimum 48px touch target */
+    min-width: 48px;
+    min-height: 48px;
   }
   
   .action-button {
     padding: 12px 18px;
     font-size: 14px;
-    min-width: 85px;
-    min-height: 50px;
+    min-width: 90px;
+    min-height: 52px;
+    /* Ensure WCAG compliant touch targets */
   }
 }
 
@@ -598,16 +789,20 @@ onUnmounted(() => {
   }
   
   .control-button {
-    width: 60px;
-    height: 60px;
+    width: 62px;
+    height: 62px;
     font-size: 20px;
+    /* Maintain WCAG 48px minimum */
+    min-width: 48px;
+    min-height: 48px;
   }
   
   .action-button {
     padding: 10px 16px;
     font-size: 13px;
-    min-width: 75px;
+    min-width: 80px;
     min-height: 48px;
+    /* Ensure buttons remain accessible */
   }
 
   .reset-modal {
@@ -647,9 +842,12 @@ onUnmounted(() => {
   }
   
   .control-button {
-    width: 50px;
-    height: 50px;
-    font-size: 18px;
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+    /* Maintain WCAG minimum in landscape */
+    min-width: 48px;
+    min-height: 48px;
   }
   
   .action-controls {
@@ -659,8 +857,9 @@ onUnmounted(() => {
   .action-button {
     padding: 8px 12px;
     font-size: 12px;
-    min-width: 65px;
-    min-height: 40px;
+    min-width: 70px;
+    min-height: 48px;
+    /* Maintain accessibility in landscape */
   }
 }
 </style>

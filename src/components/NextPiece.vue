@@ -1,7 +1,14 @@
 <template>
-  <div class="next-piece-container">
+  <div 
+    class="next-piece-container" 
+    role="status" 
+    aria-label="Next piece preview"
+  >
     <div class="label">NEXT</div>
-    <div class="preview">
+    <div 
+      class="preview" 
+      :aria-label="nextPiece ? `Next piece: ${nextPiece.type} piece` : 'No next piece'"
+    >
       <div
         v-if="nextPiece"
         class="piece-grid"
@@ -9,6 +16,8 @@
           gridTemplateColumns: `repeat(${maxWidth}, 1fr)`,
           gridTemplateRows: `repeat(${maxHeight}, 1fr)`
         }"
+        role="img"
+        :aria-label="`${nextPiece.type.toUpperCase()} tetromino piece preview`"
       >
         <div
           v-for="(cell, index) in renderGrid"

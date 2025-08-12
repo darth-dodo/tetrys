@@ -1,18 +1,22 @@
 <template>
-  <div class="scoreboard">
+  <div 
+    class="scoreboard" 
+    role="status" 
+    aria-label="Game statistics"
+  >
     <div class="stat">
       <div class="label">SCORE</div>
-      <div class="value">{{ formatNumber(gameState.score) }}</div>
+      <div class="value" :aria-label="`Score: ${formatNumber(gameState.score)}`">{{ formatNumber(gameState.score) }}</div>
     </div>
 
     <div class="stat">
       <div class="label">LEVEL</div>
-      <div class="value">{{ gameState.level }}</div>
+      <div class="value" :aria-label="`Level: ${gameState.level}`">{{ gameState.level }}</div>
     </div>
 
     <div class="stat">
       <div class="label">LINES</div>
-      <div class="value">{{ gameState.lines }}</div>
+      <div class="value" :aria-label="`Lines cleared: ${gameState.lines}`">{{ gameState.lines }}</div>
     </div>
   </div>
 </template>

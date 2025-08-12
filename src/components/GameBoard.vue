@@ -5,6 +5,9 @@
     @touchmove="handleTouchMove"
     @touchend="handleTouchEnd"
     @touchcancel="handleTouchEnd"
+    role="application"
+    aria-label="Tetris game board. Tap to rotate, swipe to move pieces"
+    tabindex="0"
   >
     <div 
       class="game-board"
@@ -12,12 +15,16 @@
         gridTemplateColumns: `repeat(${BOARD_WIDTH}, 1fr)`,
         gridTemplateRows: `repeat(${BOARD_HEIGHT}, 1fr)`
       }"
+      role="grid"
+      aria-label="Game board with falling tetromino pieces"
     >
       <div
         v-for="(cell, index) in renderBoard"
         :key="index"
         class="cell"
         :class="getCellClass(cell)"
+        role="gridcell"
+        :aria-label="cell ? `${cell} piece` : 'empty cell'"
       />
     </div>
   </div>
