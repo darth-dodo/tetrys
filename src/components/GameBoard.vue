@@ -124,9 +124,18 @@ const handleTouchEnd = (e: TouchEvent) => {
     }
   }
   
-  // Provide haptic feedback
+  // Provide enhanced haptic feedback based on gesture
   if ('vibrate' in navigator) {
-    navigator.vibrate(15)
+    if (touchDuration < maxTapDuration && Math.abs(deltaX) < minSwipeDistance && Math.abs(deltaY) < minSwipeDistance) {
+      // Tap/rotate gesture - double pulse
+      navigator.vibrate([8, 20, 8])
+    } else if (Math.abs(deltaY) > 80) {
+      // Hard drop - strong pattern
+      navigator.vibrate([15, 30, 15, 30, 15])
+    } else {
+      // Movement or soft drop - single pulse
+      navigator.vibrate(10)
+    }
   }
   
   touchState.value.isDragging = false

@@ -438,14 +438,9 @@ document.addEventListener('touchend', (e) => {
   width: 100%;
   max-width: 100%;
   gap: 12px;
-  position: sticky;
-  top: 10px;
-  z-index: 10;
-  background: var(--theme-bg, #000);
   padding: 8px;
   border-radius: 8px;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin-bottom: 12px;
 }
 
 .start-screen {
@@ -685,11 +680,8 @@ document.addEventListener('touchend', (e) => {
     flex-direction: column;
     width: 160px;
     max-width: 160px;
-    position: static;
-    background: transparent;
     padding: 0;
     margin-bottom: 0;
-    box-shadow: none;
   }
 }
 
@@ -804,11 +796,8 @@ document.addEventListener('touchend', (e) => {
     flex-direction: column;
     width: auto;
     min-width: 90px;
-    position: static;
-    background: transparent;
     padding: 0;
     margin-bottom: 0;
-    box-shadow: none;
     gap: 8px;
   }
   

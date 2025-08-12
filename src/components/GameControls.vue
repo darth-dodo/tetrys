@@ -185,6 +185,35 @@ const touchState = ref({
   touchStartTime: 0
 })
 
+// Enhanced vibration patterns for different actions
+const vibratePattern = (action: string) => {
+  if (!('vibrate' in navigator)) return
+  
+  switch (action) {
+    case 'left':
+    case 'right':
+      navigator.vibrate(8) // Short pulse for movement
+      break
+    case 'down':
+      navigator.vibrate(12) // Slightly longer for down movement
+      break
+    case 'rotate':
+      navigator.vibrate([8, 20, 8]) // Double pulse for rotation
+      break
+    case 'drop':
+      navigator.vibrate([15, 30, 15, 30, 15]) // Strong pattern for drop
+      break
+    case 'pause':
+      navigator.vibrate([25, 50, 25]) // Distinctive pause pattern
+      break
+    case 'reset':
+      navigator.vibrate([10, 30, 10, 30, 10, 30, 10]) // Alert pattern for reset
+      break
+    default:
+      navigator.vibrate(10) // Default light vibration
+  }
+}
+
 // Touch event handlers for better mobile responsiveness
 const handleTouchStart = (e: TouchEvent, action: string) => {
   e.preventDefault()
@@ -196,10 +225,8 @@ const handleTouchStart = (e: TouchEvent, action: string) => {
   const button = e.target as HTMLElement
   button.classList.add('touch-pressed')
   
-  // Provide haptic feedback if available
-  if ('vibrate' in navigator) {
-    navigator.vibrate(10)
-  }
+  // Provide enhanced haptic feedback
+  vibratePattern(action)
 }
 
 const handleTouchEnd = (e?: TouchEvent) => {
@@ -278,10 +305,8 @@ const handlePause = () => {
   // Show resume modal
   showResumeModal.value = true
   
-  // Provide haptic feedback for mobile users
-  if ('vibrate' in navigator) {
-    navigator.vibrate(20)
-  }
+  // Provide enhanced haptic feedback for mobile users
+  vibratePattern('pause')
 }
 
 // Resume handler - resumes game and closes modal
@@ -291,9 +316,9 @@ const handleResume = () => {
   // Resume the game
   emit('pause') // Toggle pause state
   
-  // Provide haptic feedback
+  // Provide enhanced haptic feedback for resume
   if ('vibrate' in navigator) {
-    navigator.vibrate(15)
+    navigator.vibrate([8, 20, 8]) // Double pulse for resume
   }
 }
 
@@ -386,8 +411,8 @@ onUnmounted(() => {
 .controls-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-  max-width: 220px;
+  gap: 15px;
+  max-width: 280px;
   margin: 0 auto 20px auto;
 }
 
@@ -395,9 +420,9 @@ onUnmounted(() => {
   background: var(--theme-bg, #333);
   color: var(--theme-primary, #00ff00);
   border: 3px solid var(--theme-primary, #00ff00);
-  width: 70px;
-  height: 70px;
-  font-size: 24px;
+  width: 85px;
+  height: 85px;
+  font-size: 28px;
   font-family: monospace;
   font-weight: bold;
   cursor: pointer;
@@ -405,15 +430,15 @@ onUnmounted(() => {
   user-select: none;
   transition: all 0.15s ease;
   box-shadow: var(--theme-shadow, 0 4px 0 var(--theme-secondary, #008800));
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
   /* Improved accessibility */
-  min-width: 48px;
-  min-height: 48px;
+  min-width: 56px;
+  min-height: 56px;
   line-height: 1;
   text-align: center;
 }
@@ -492,18 +517,18 @@ onUnmounted(() => {
   background: var(--theme-bg, #333);
   color: var(--theme-primary, #00ff00);
   border: 3px solid var(--theme-primary, #00ff00);
-  padding: 14px 24px;
+  padding: 18px 32px;
   font-family: monospace;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
-  min-width: 100px;
-  min-height: 56px;
+  min-width: 120px;
+  min-height: 64px;
   transition: all 0.15s ease;
   box-shadow: var(--theme-shadow, 0 4px 0 var(--theme-secondary, #008800));
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -576,26 +601,26 @@ onUnmounted(() => {
   }
   
   .controls-grid {
-    gap: 15px;
-    max-width: 260px;
+    gap: 18px;
+    max-width: 300px;
     margin-bottom: 25px;
   }
   
   .control-button {
-    width: 75px;
-    height: 75px;
-    font-size: 28px;
+    width: 90px;
+    height: 90px;
+    font-size: 32px;
   }
   
   .action-controls {
-    gap: 15px;
+    gap: 18px;
   }
   
   .action-button {
-    padding: 16px 28px;
-    font-size: 18px;
-    min-width: 110px;
-    min-height: 58px;
+    padding: 20px 36px;
+    font-size: 20px;
+    min-width: 140px;
+    min-height: 68px;
   }
 }
 
