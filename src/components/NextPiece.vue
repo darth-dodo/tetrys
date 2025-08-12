@@ -67,25 +67,30 @@ const renderGrid = computed(() => {
 .next-piece-container {
   background: var(--theme-surface, #111);
   border: 2px solid var(--theme-border, #00ff00);
-  padding: 10px;
-  min-width: 70px;
+  padding: 12px;
+  min-width: 90px;
   flex: 1;
-  box-shadow: var(--theme-shadow, none);
+  box-shadow: var(--theme-shadow, 0 2px 8px rgba(0, 0, 0, 0.3));
+  border-radius: 6px;
 }
 
 .label {
   color: var(--theme-primary, #00ff00);
-  font-size: 10px;
+  font-size: 12px;
   font-family: monospace;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   text-shadow: var(--theme-glow, none);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 
 .preview {
   display: flex;
   justify-content: center;
-  min-height: 50px;
+  min-height: 60px;
   align-items: center;
+  padding: 4px;
 }
 
 .piece-grid {
@@ -94,8 +99,10 @@ const renderGrid = computed(() => {
 }
 
 .cell {
-  width: 12px;
-  height: 12px;
+  width: 15px;
+  height: 15px;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .empty {
@@ -110,24 +117,70 @@ const renderGrid = computed(() => {
 .piece-j { background: var(--piece-j, #0000ff); }
 .piece-l { background: var(--piece-l, #ff8000); }
 
+/* Mobile-first responsive design */
 @media (min-width: 480px) {
   .next-piece-container {
-    padding: 15px;
-    min-width: 80px;
+    padding: 16px;
+    min-width: 100px;
   }
   
   .label {
-    font-size: 12px;
-    margin-bottom: 10px;
+    font-size: 13px;
+    margin-bottom: 12px;
   }
   
   .preview {
-    min-height: 60px;
+    min-height: 70px;
+    padding: 6px;
   }
   
   .cell {
-    width: 15px;
-    height: 15px;
+    width: 17px;
+    height: 17px;
+  }
+}
+
+@media (min-width: 768px) {
+  .next-piece-container {
+    padding: 18px;
+    min-width: 120px;
+  }
+  
+  .label {
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  
+  .preview {
+    min-height: 80px;
+  }
+  
+  .cell {
+    width: 19px;
+    height: 19px;
+  }
+}
+
+/* Landscape mobile adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+  .next-piece-container {
+    padding: 8px 10px;
+    min-width: 75px;
+  }
+  
+  .label {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+  
+  .preview {
+    min-height: 40px;
+    padding: 2px;
+  }
+  
+  .cell {
+    width: 12px;
+    height: 12px;
   }
 }
 </style>

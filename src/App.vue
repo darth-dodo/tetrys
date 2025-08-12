@@ -62,7 +62,14 @@
           <NextPiece :next-piece="gameState.nextPiece" />
         </div>
         
-        <GameBoard :game-state="gameState" />
+        <GameBoard 
+          :game-state="gameState"
+          @move-left="handleMove('left')"
+          @move-right="handleMove('right')"
+          @move-down="handleMove('down')"
+          @rotate="handleRotate"
+          @drop="handleDrop"
+        />
         
         <GameControls
           :game-state="gameState"
@@ -344,7 +351,7 @@ document.addEventListener('touchend', (e) => {
 }
 
 .game-container {
-  padding: 10px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -352,6 +359,7 @@ document.addEventListener('touchend', (e) => {
   width: 100%;
   max-width: 100vw;
   box-sizing: border-box;
+  position: relative;
 }
 
 .overlay {
@@ -423,17 +431,27 @@ document.addEventListener('touchend', (e) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
   max-width: 600px;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
 .info-panel {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  max-width: 400px;
-  gap: 10px;
+  max-width: 100%;
+  gap: 12px;
+  position: sticky;
+  top: 10px;
+  z-index: 10;
+  background: var(--theme-bg, #000);
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .start-screen {
@@ -601,6 +619,24 @@ document.addEventListener('touchend', (e) => {
   font-weight: bold;
 }
 
+/* Mobile-first responsive breakpoints */
+@media (min-width: 480px) {
+  .game-container {
+    padding: 12px;
+  }
+  
+  .game-layout {
+    gap: 20px;
+    padding: 0 15px;
+  }
+  
+  .info-panel {
+    max-width: 400px;
+    gap: 15px;
+    padding: 12px;
+  }
+}
+
 @media (min-width: 768px) {
   .game-container {
     padding: 20px;
@@ -613,30 +649,44 @@ document.addEventListener('touchend', (e) => {
     align-items: flex-start;
     max-width: 800px;
     width: 100%;
+    gap: 30px;
   }
   
   .info-panel {
     flex-direction: column;
-    width: 150px;
+    width: 160px;
+    max-width: 160px;
+    position: static;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 0;
+    box-shadow: none;
   }
 }
 
+/* Small mobile devices */
 @media (max-width: 480px) {
   .game-container {
-    padding: 5px;
+    padding: 6px;
   }
   
   .header {
-    padding: 15px;
+    padding: 12px;
   }
   
   .title {
     font-size: 24px;
   }
   
+  .game-layout {
+    gap: 12px;
+    padding: 0 5px;
+  }
+  
   .info-panel {
-    max-width: 100%;
     gap: 8px;
+    padding: 6px;
+    margin-bottom: 6px;
   }
   
   .start-screen {
@@ -676,6 +726,23 @@ document.addEventListener('touchend', (e) => {
   }
 }
 
+/* Very small screens */
+@media (max-width: 360px) {
+  .game-container {
+    padding: 4px;
+  }
+  
+  .game-layout {
+    gap: 10px;
+    padding: 0 2px;
+  }
+  
+  .info-panel {
+    gap: 6px;
+    padding: 4px;
+  }
+}
+
 @media (max-height: 600px) {
   .game-container {
     min-height: calc(100vh - 60px);
@@ -690,17 +757,50 @@ document.addEventListener('touchend', (e) => {
   }
 }
 
+/* Landscape mobile optimization */
 @media (max-height: 500px) and (orientation: landscape) {
+  .game-container {
+    padding: 4px;
+    min-height: calc(100vh - 50px);
+  }
+  
   .game-layout {
     flex-direction: row;
-    gap: 15px;
+    gap: 10px;
     align-items: flex-start;
+    padding: 0;
   }
   
   .info-panel {
     flex-direction: column;
     width: auto;
-    min-width: 100px;
+    min-width: 90px;
+    position: static;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 0;
+    box-shadow: none;
+    gap: 8px;
+  }
+  
+  .header {
+    padding: 8px 15px;
+  }
+  
+  .title {
+    font-size: 18px;
+  }
+}
+
+/* Ultra-wide mobile landscape */
+@media (min-width: 640px) and (max-height: 400px) {
+  .game-layout {
+    max-width: 100%;
+    justify-content: space-around;
+  }
+  
+  .info-panel {
+    width: 140px;
   }
 }
 </style>

@@ -1,5 +1,11 @@
 <template>
-  <div class="game-board-container">
+  <div 
+    class="game-board-container"
+    @touchstart="handleTouchStart"
+    @touchmove="handleTouchMove"
+    @touchend="handleTouchEnd"
+    @touchcancel="handleTouchEnd"
+  >
     <div 
       class="game-board"
       :style="{ 
@@ -18,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { GameState, TetrominoType } from '@/types/tetris'
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/types/tetris'
 
@@ -26,7 +32,98 @@ interface Props {
   gameState: GameState
 }
 
+interface Emits {
+  moveLeft: []
+  moveRight: []
+  moveDown: []
+  rotate: []
+  drop: []
+}
+
 const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
+
+// Touch gesture state
+const touchState = ref({
+  startX: 0,
+  startY: 0,
+  currentX: 0,
+  currentY: 0,
+  isDragging: false,
+  startTime: 0
+})
+
+// Touch gesture handlers
+const handleTouchStart = (e: TouchEvent) => {
+  if (!props.gameState.isPlaying || props.gameState.isPaused) return
+  
+  e.preventDefault()
+  const touch = e.touches[0]
+  touchState.value = {
+    startX: touch.clientX,
+    startY: touch.clientY,
+    currentX: touch.clientX,
+    currentY: touch.clientY,
+    isDragging: true,
+    startTime: Date.now()
+  }
+}
+
+const handleTouchMove = (e: TouchEvent) => {
+  if (!touchState.value.isDragging || !props.gameState.isPlaying || props.gameState.isPaused) return
+  
+  e.preventDefault()
+  const touch = e.touches[0]
+  touchState.value.currentX = touch.clientX
+  touchState.value.currentY = touch.clientY
+}
+
+const handleTouchEnd = (e: TouchEvent) => {
+  if (!touchState.value.isDragging || !props.gameState.isPlaying || props.gameState.isPaused) return
+  
+  e.preventDefault()
+  
+  const deltaX = touchState.value.currentX - touchState.value.startX
+  const deltaY = touchState.value.currentY - touchState.value.startY
+  const touchDuration = Date.now() - touchState.value.startTime
+  
+  const minSwipeDistance = 30
+  const maxTapDuration = 200
+  
+  // Determine gesture type
+  if (touchDuration < maxTapDuration && Math.abs(deltaX) < minSwipeDistance && Math.abs(deltaY) < minSwipeDistance) {
+    // Tap gesture - rotate piece
+    emit('rotate')
+  } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    // Horizontal swipe
+    if (Math.abs(deltaX) > minSwipeDistance) {
+      if (deltaX > 0) {
+        emit('moveRight')
+      } else {
+        emit('moveLeft')
+      }
+    }
+  } else {
+    // Vertical swipe
+    if (Math.abs(deltaY) > minSwipeDistance) {
+      if (deltaY > 0) {
+        // Swipe down - either move down or drop based on distance
+        if (Math.abs(deltaY) > 80) {
+          emit('drop') // Long swipe = hard drop
+        } else {
+          emit('moveDown') // Short swipe = soft drop
+        }
+      }
+    }
+  }
+  
+  // Provide haptic feedback
+  if ('vibrate' in navigator) {
+    navigator.vibrate(15)
+  }
+  
+  touchState.value.isDragging = false
+}
 
 // Create a combined board with current piece
 const renderBoard = computed(() => {
@@ -63,12 +160,17 @@ const getCellClass = (cell: TetrominoType | null): string => {
 <style scoped>
 .game-board-container {
   width: 100%;
-  max-width: 300px;
-  height: 600px;
+  max-width: 320px;
+  height: 560px;
   border: 3px solid var(--theme-border, #00ff00);
   background: var(--theme-bg, #000);
   margin: 0 auto;
-  box-shadow: var(--theme-shadow, none);
+  box-shadow: var(--theme-shadow, 0 4px 12px rgba(0, 0, 0, 0.4));
+  border-radius: 8px;
+  touch-action: none;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .game-board {
@@ -87,6 +189,8 @@ const getCellClass = (cell: TetrominoType | null): string => {
   min-height: 0;
   min-width: 0;
   transition: background-color 0.1s ease;
+  border-radius: 1px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .empty {
@@ -101,16 +205,38 @@ const getCellClass = (cell: TetrominoType | null): string => {
 .piece-j { background: var(--piece-j, #0000ff); }
 .piece-l { background: var(--piece-l, #ff8000); }
 
+/* Mobile-first responsive board sizing */
 @media (max-width: 480px) {
   .game-board-container {
+    max-width: 300px;
+    height: 520px;
+  }
+}
+
+@media (max-width: 400px) {
+  .game-board-container {
     max-width: 280px;
-    height: 500px;
+    height: 480px;
   }
 }
 
 @media (max-width: 360px) {
   .game-board-container {
-    max-width: 250px;
+    max-width: 260px;
+    height: 450px;
+  }
+}
+
+@media (max-width: 320px) {
+  .game-board-container {
+    max-width: 240px;
+    height: 420px;
+  }
+}
+
+/* Height-based adjustments */
+@media (max-height: 700px) {
+  .game-board-container {
     height: 450px;
   }
 }
@@ -123,7 +249,23 @@ const getCellClass = (cell: TetrominoType | null): string => {
 
 @media (max-height: 500px) {
   .game-board-container {
-    height: 350px;
+    height: 320px;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  .game-board-container {
+    max-width: 240px;
+    height: 300px;
+  }
+}
+
+/* Large tablets and desktop */
+@media (min-width: 768px) {
+  .game-board-container {
+    max-width: 360px;
+    height: 640px;
   }
 }
 </style>
