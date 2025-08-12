@@ -43,16 +43,15 @@ const formatNumber = (num: number): string => {
 .scoreboard {
   background: var(--theme-surface, #111);
   border: 2px solid var(--theme-border, #00ff00);
-  padding: 12px;
-  min-width: 120px;
-  flex: 1;
+  padding: 8px;
+  width: 100%;
   box-shadow: var(--theme-shadow, 0 2px 8px rgba(0, 0, 0, 0.3));
   border-radius: 6px;
 }
 
 .stat {
-  margin-bottom: 10px;
-  padding: 4px 0;
+  margin-bottom: 6px;
+  padding: 2px 0;
   text-align: center;
 }
 
@@ -62,21 +61,22 @@ const formatNumber = (num: number): string => {
 
 .label {
   color: var(--theme-primary, #00ff00);
-  font-size: 12px;
+  font-size: 9px;
   font-family: monospace;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   text-shadow: var(--theme-glow, none);
   font-weight: bold;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
 .value {
   color: var(--theme-text, #fff);
-  font-size: 18px;
+  font-size: 14px;
   font-family: monospace;
   font-weight: bold;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 /* Mobile-first responsive design */

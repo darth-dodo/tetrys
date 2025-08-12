@@ -50,19 +50,21 @@
 
       <!-- Game Layout -->
       <div class="game-layout" v-if="gameState.isPlaying">
-        <div class="info-panel">
-          <ScoreBoard :game-state="gameState" />
-          <NextPiece :next-piece="gameState.nextPiece" />
+        <div class="game-area">
+          <GameBoard 
+            :game-state="gameState"
+            @move-left="handleMove('left')"
+            @move-right="handleMove('right')"
+            @move-down="handleMove('down')"
+            @rotate="handleRotate"
+            @drop="handleDrop"
+          />
+          
+          <div class="info-panel">
+            <ScoreBoard :game-state="gameState" />
+            <NextPiece :next-piece="gameState.nextPiece" />
+          </div>
         </div>
-        
-        <GameBoard 
-          :game-state="gameState"
-          @move-left="handleMove('left')"
-          @move-right="handleMove('right')"
-          @move-down="handleMove('down')"
-          @rotate="handleRotate"
-          @drop="handleDrop"
-        />
         
         <GameControls
           :game-state="gameState"
@@ -425,22 +427,30 @@ document.addEventListener('touchend', (e) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
-  max-width: 600px;
-  padding: 0 10px;
+  max-width: 100vw;
+  padding: 0 8px;
   box-sizing: border-box;
+  min-height: calc(100vh - 80px);
+}
+
+.game-area {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  flex: 1;
 }
 
 .info-panel {
   display: flex;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 100%;
-  gap: 12px;
-  padding: 8px;
-  border-radius: 8px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 8px;
+  width: 120px;
+  flex-shrink: 0;
 }
 
 .start-screen {
@@ -644,20 +654,44 @@ document.addEventListener('touchend', (e) => {
 }
 
 /* Mobile-first responsive breakpoints */
+@media (max-width: 479px) {
+  .game-container {
+    padding: 4px;
+  }
+  
+  .game-layout {
+    gap: 8px;
+    padding: 0 4px;
+    min-height: calc(100vh - 70px);
+  }
+  
+  .game-area {
+    gap: 6px;
+  }
+  
+  .info-panel {
+    width: 100px;
+    gap: 6px;
+  }
+}
+
 @media (min-width: 480px) {
   .game-container {
     padding: 12px;
   }
   
   .game-layout {
-    gap: 20px;
-    padding: 0 15px;
+    gap: 16px;
+    padding: 0 12px;
+  }
+  
+  .game-area {
+    gap: 12px;
   }
   
   .info-panel {
-    max-width: 400px;
-    gap: 15px;
-    padding: 12px;
+    width: 140px;
+    gap: 10px;
   }
 }
 
@@ -668,99 +702,78 @@ document.addEventListener('touchend', (e) => {
   }
   
   .game-layout {
+    flex-direction: column;
+    align-items: center;
+    max-width: 600px;
+    gap: 24px;
+  }
+  
+  .game-area {
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
-    max-width: 800px;
-    width: 100%;
     gap: 30px;
+    max-width: 600px;
   }
   
   .info-panel {
     flex-direction: column;
-    width: 160px;
-    max-width: 160px;
-    padding: 0;
-    margin-bottom: 0;
+    width: 180px;
+    gap: 16px;
   }
 }
 
-/* Small mobile devices */
+/* Small mobile devices - header and start screen adjustments */
 @media (max-width: 480px) {
-  .game-container {
-    padding: 6px;
-  }
-  
   .header {
-    padding: 12px;
+    padding: 10px;
   }
   
   .title {
-    font-size: 24px;
-  }
-  
-  .game-layout {
-    gap: 12px;
-    padding: 0 5px;
-  }
-  
-  .info-panel {
-    gap: 8px;
-    padding: 6px;
-    margin-bottom: 6px;
+    font-size: 22px;
   }
   
   .start-screen {
-    padding: 20px 15px;
+    padding: 15px 10px;
   }
   
   .game-logo {
-    font-size: 36px;
+    font-size: 32px;
   }
   
   .logo-subtitle {
     font-size: 12px;
   }
   
-  .game-description p {
-    font-size: 13px;
-  }
-  
   .start-button {
-    padding: 12px 25px;
+    padding: 12px 20px;
     font-size: 16px;
-    min-width: 180px;
+    min-width: 160px;
   }
   
   .settings-button {
-    padding: 8px 16px;
+    padding: 8px 12px;
     font-size: 12px;
   }
   
   .preview-block {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .hint-row {
-    font-size: 11px;
+    width: 14px;
+    height: 14px;
   }
 }
 
-/* Very small screens */
+/* Very small screens - ultra compact */
 @media (max-width: 360px) {
-  .game-container {
-    padding: 4px;
+  .header {
+    padding: 8px;
   }
   
-  .game-layout {
-    gap: 10px;
-    padding: 0 2px;
+  .title {
+    font-size: 18px;
   }
   
-  .info-panel {
-    gap: 6px;
-    padding: 4px;
+  .game-logo {
+    font-size: 28px;
   }
 }
 
