@@ -50,8 +50,8 @@
       <!-- Pause Screen -->
       <div v-if="gameState.isPaused && gameState.isPlaying" class="overlay">
         <div class="modal">
-          <h2>PAUSED</h2>
-          <p>Press P to continue</p>
+          <h2>⏸️ PAUSED</h2>
+          <p>Tap RESUME button to continue</p>
         </div>
       </div>
 
@@ -112,7 +112,8 @@
           </div>
           
           <div class="controls-hint">
-            <span class="key">←→↓</span> Move • <span class="key">↑</span> Rotate • <span class="key">P</span> Pause
+            <div class="mobile-controls">📱 Tap game board to rotate • Swipe to move • Use buttons to control</div>
+            <div class="desktop-controls"><span class="key">←→↓</span> Move • <span class="key">↑</span> Rotate • <span class="key">ESC</span> Pause</div>
           </div>
         </div>
       </div>
@@ -607,6 +608,41 @@ document.addEventListener('touchend', (e) => {
   font-size: 12px;
   font-family: monospace;
   line-height: 1.4;
+}
+
+.mobile-controls {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--theme-text-secondary, #ccc);
+}
+
+.desktop-controls {
+  display: none;
+  font-size: 11px;
+  color: var(--theme-text-secondary, #888);
+}
+
+/* Show desktop controls only on larger screens */
+@media (min-width: 768px) {
+  .mobile-controls {
+    display: none;
+  }
+  
+  .desktop-controls {
+    display: block;
+  }
+}
+
+/* Hide desktop controls on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .desktop-controls {
+    display: none !important;
+  }
+  
+  .mobile-controls {
+    display: block !important;
+  }
 }
 
 

@@ -76,13 +76,14 @@
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchEnd"
         v-if="gameState.isPlaying"
-        :aria-label="gameState.isPaused ? 'Resume game' : 'Pause game'"
+        :aria-label="gameState.isPaused ? 'Tap to resume game' : 'Tap to pause game'"
         :aria-pressed="gameState.isPaused"
         type="button"
         role="button"
         tabindex="0"
       >
-        {{ gameState.isPaused ? 'RESUME' : 'PAUSE' }}
+        <span class="pause-icon">{{ gameState.isPaused ? '▶' : '⏸' }}</span>
+        <span class="pause-text">{{ gameState.isPaused ? 'RESUME' : 'PAUSE' }}</span>
       </button>
       <button 
         class="action-button reset-button" 
@@ -203,10 +204,14 @@ const handleTouchEnd = (e?: TouchEvent) => {
   // Execute action if touch was quick enough (prevent accidental long presses)
   if (touchState.value.isPressed && touchState.value.activeButton) {
     const touchDuration = Date.now() - touchState.value.touchStartTime
+    const action = touchState.value.activeButton
     
-    if (touchDuration < 500) { // 500ms max for intentional tap
-      const action = touchState.value.activeButton
-      
+    // Pause button is always responsive (mobile-first)
+    if (action === 'pause') {
+      handlePause()
+    }
+    // Other actions require quick tap and game to be playing/unpaused
+    else if (touchDuration < 500 && props.gameState.isPlaying && !props.gameState.isPaused) {
       switch (action) {
         case 'left':
         case 'right':
@@ -218,9 +223,6 @@ const handleTouchEnd = (e?: TouchEvent) => {
           break
         case 'drop':
           handleDrop()
-          break
-        case 'pause':
-          handlePause()
           break
         case 'reset':
           showResetConfirm.value = true
@@ -261,9 +263,15 @@ const handleDrop = () => {
   emit('drop')
 }
 
+// Mobile-first pause handler - primary method for pause/resume
 const handlePause = () => {
   if (!props.gameState.isPlaying) return
   emit('pause')
+  
+  // Provide haptic feedback for mobile users
+  if ('vibrate' in navigator) {
+    navigator.vibrate(20)
+  }
 }
 
 const confirmReset = () => {
@@ -287,40 +295,43 @@ const handleModalKeyDown = (e: KeyboardEvent) => {
 }
 
 
-// Keyboard controls for desktop
+// Keyboard controls for desktop (secondary input method)
 const handleKeyDown = (e: KeyboardEvent) => {
-  if (!props.gameState.isPlaying || props.gameState.isPaused) return
+  // Only handle game controls when playing and not paused
+  if (props.gameState.isPlaying && !props.gameState.isPaused) {
+    switch (e.code) {
+      case 'ArrowLeft':
+      case 'KeyA':
+        e.preventDefault()
+        handleMove('left')
+        break
+      case 'ArrowRight':
+      case 'KeyD':
+        e.preventDefault()
+        handleMove('right')
+        break
+      case 'ArrowDown':
+      case 'KeyS':
+        e.preventDefault()
+        handleMove('down')
+        break
+      case 'ArrowUp':
+      case 'KeyW':
+      case 'Space':
+        e.preventDefault()
+        handleRotate()
+        break
+      case 'Enter':
+        e.preventDefault()
+        handleDrop()
+        break
+    }
+  }
   
-  switch (e.code) {
-    case 'ArrowLeft':
-    case 'KeyA':
-      e.preventDefault()
-      handleMove('left')
-      break
-    case 'ArrowRight':
-    case 'KeyD':
-      e.preventDefault()
-      handleMove('right')
-      break
-    case 'ArrowDown':
-    case 'KeyS':
-      e.preventDefault()
-      handleMove('down')
-      break
-    case 'ArrowUp':
-    case 'KeyW':
-    case 'Space':
-      e.preventDefault()
-      handleRotate()
-      break
-    case 'Enter':
-      e.preventDefault()
-      handleDrop()
-      break
-    case 'KeyP':
-      e.preventDefault()
-      handlePause()
-      break
+  // Pause can be toggled anytime during gameplay (mobile-first: primarily via button)
+  if (props.gameState.isPlaying && e.code === 'Escape') {
+    e.preventDefault()
+    handlePause()
   }
 }
 
@@ -593,6 +604,20 @@ onUnmounted(() => {
   border-color: #FF9800;
   color: #FF9800;
   box-shadow: 0 4px 0 #F57C00;
+  position: relative;
+  font-weight: bold;
+  min-width: 120px;
+}
+
+.pause-icon {
+  display: inline-block;
+  font-size: 1.2em;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.pause-text {
+  vertical-align: middle;
 }
 
 .pause-button:hover, .pause-button:focus {
@@ -611,7 +636,9 @@ onUnmounted(() => {
 .pause-button[aria-pressed="true"] {
   background: #4CAF50;
   border-color: #4CAF50;
+  color: #fff;
   box-shadow: 0 4px 0 #2E7D32;
+  animation: pulse-resume 1.5s ease-in-out infinite;
 }
 
 .pause-button[aria-pressed="true"]:hover,
@@ -619,6 +646,12 @@ onUnmounted(() => {
   background: #66BB6A;
   box-shadow: 0 6px 0 #2E7D32;
   outline: 3px solid #81C784;
+  animation: none;
+}
+
+@keyframes pulse-resume {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 .pause-button:active,
