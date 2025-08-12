@@ -400,29 +400,27 @@ onUnmounted(() => {
 
 <style scoped>
 .game-controls {
-  margin-top: 20px;
+  margin-top: 8px;
   width: 100%;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 10px;
+  max-width: 100%;
+  padding: 0 8px;
 }
 
 .controls-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 15px;
-  max-width: 280px;
-  margin: 0 auto 20px auto;
+  gap: 12px;
+  max-width: 260px;
+  margin: 0 auto 16px auto;
 }
 
 .control-button {
   background: var(--theme-bg, #333);
   color: var(--theme-primary, #00ff00);
   border: 3px solid var(--theme-primary, #00ff00);
-  width: 85px;
-  height: 85px;
-  font-size: 28px;
+  width: 75px;
+  height: 75px;
+  font-size: 26px;
   font-family: monospace;
   font-weight: bold;
   cursor: pointer;
@@ -517,15 +515,15 @@ onUnmounted(() => {
   background: var(--theme-bg, #333);
   color: var(--theme-primary, #00ff00);
   border: 3px solid var(--theme-primary, #00ff00);
-  padding: 18px 32px;
+  padding: 16px 28px;
   font-family: monospace;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
-  min-width: 120px;
-  min-height: 64px;
+  min-width: 110px;
+  min-height: 60px;
   transition: all 0.15s ease;
   box-shadow: var(--theme-shadow, 0 4px 0 var(--theme-secondary, #008800));
   border-radius: 8px;
@@ -596,31 +594,65 @@ onUnmounted(() => {
 
 @media (min-width: 480px) {
   .game-controls {
-    margin-top: 25px;
+    margin-top: 16px;
+    padding: 0 16px;
+  }
+  
+  .controls-grid {
+    gap: 12px;
+    max-width: 240px;
+    margin-bottom: 16px;
+  }
+  
+  .control-button {
+    width: 70px;
+    height: 70px;
+    font-size: 24px;
+  }
+  
+  .action-controls {
+    gap: 12px;
+  }
+  
+  .action-button {
+    padding: 12px 20px;
+    font-size: 14px;
+    min-width: 80px;
+    min-height: 52px;
+  }
+}
+
+@media (min-width: 768px) {
+  .game-controls {
+    margin-top: 24px;
     padding: 0 20px;
   }
   
   .controls-grid {
-    gap: 18px;
-    max-width: 300px;
-    margin-bottom: 25px;
+    gap: 16px;
+    max-width: 280px;
+    margin-bottom: 20px;
   }
   
   .control-button {
-    width: 90px;
-    height: 90px;
-    font-size: 32px;
+    width: 80px;
+    height: 80px;
+    font-size: 28px;
+    border: 3px solid var(--theme-primary, #00ff00);
+    box-shadow: var(--theme-shadow, 0 4px 0 var(--theme-secondary, #008800));
   }
   
   .action-controls {
-    gap: 18px;
+    gap: 16px;
   }
   
   .action-button {
-    padding: 20px 36px;
-    font-size: 20px;
-    min-width: 140px;
-    min-height: 68px;
+    padding: 16px 28px;
+    font-size: 16px;
+    min-width: 100px;
+    min-height: 56px;
+    border: 3px solid var(--theme-primary, #00ff00);
+    box-shadow: var(--theme-shadow, 0 4px 0 var(--theme-secondary, #008800));
   }
 }
 

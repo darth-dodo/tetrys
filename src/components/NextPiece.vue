@@ -76,30 +76,30 @@ const renderGrid = computed(() => {
 .next-piece-container {
   background: var(--theme-surface, #111);
   border: 2px solid var(--theme-border, #00ff00);
-  padding: 12px;
-  min-width: 90px;
-  flex: 1;
+  padding: 8px;
+  width: 100%;
   box-shadow: var(--theme-shadow, 0 2px 8px rgba(0, 0, 0, 0.3));
   border-radius: 6px;
 }
 
 .label {
   color: var(--theme-primary, #00ff00);
-  font-size: 12px;
+  font-size: 9px;
   font-family: monospace;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   text-shadow: var(--theme-glow, none);
   font-weight: bold;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   text-align: center;
+  text-transform: uppercase;
 }
 
 .preview {
   display: flex;
   justify-content: center;
-  min-height: 60px;
+  min-height: 40px;
   align-items: center;
-  padding: 4px;
+  padding: 2px;
 }
 
 .piece-grid {
@@ -108,9 +108,9 @@ const renderGrid = computed(() => {
 }
 
 .cell {
-  width: 15px;
-  height: 15px;
-  border-radius: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 

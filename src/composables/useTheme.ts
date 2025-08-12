@@ -4,7 +4,7 @@ import { themes } from '@/types/theme'
 
 const THEME_STORAGE_KEY = 'tetrys-theme'
 
-const currentThemeId = ref<ThemeId>('gameboy')
+const currentThemeId = ref<ThemeId>('classic')
 
 export function useTheme() {
   const currentTheme = computed<Theme>(() => themes[currentThemeId.value])
@@ -48,7 +48,7 @@ export function useTheme() {
     if (saved && themes[saved as ThemeId]) {
       setTheme(saved as ThemeId)
     } else {
-      setTheme('gameboy')
+      setTheme('classic')
     }
   }
   
