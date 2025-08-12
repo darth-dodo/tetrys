@@ -47,13 +47,6 @@
         </div>
       </div>
 
-      <!-- Pause Screen -->
-      <div v-if="gameState.isPaused && gameState.isPlaying" class="overlay">
-        <div class="modal">
-          <h2>⏸️ PAUSED</h2>
-          <p>Tap RESUME button to continue</p>
-        </div>
-      </div>
 
       <!-- Game Layout -->
       <div class="game-layout" v-if="gameState.isPlaying">

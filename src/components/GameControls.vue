@@ -72,18 +72,14 @@
       <button 
         class="action-button pause-button" 
         @click="handlePause" 
-        @touchstart="handleTouchStart($event, 'pause')"
-        @touchend="handleTouchEnd"
-        @touchcancel="handleTouchEnd"
-        v-if="gameState.isPlaying"
-        :aria-label="gameState.isPaused ? 'Tap to resume game' : 'Tap to pause game'"
-        :aria-pressed="gameState.isPaused"
+        v-if="gameState.isPlaying && !gameState.isPaused"
+        aria-label="Pause game"
         type="button"
         role="button"
         tabindex="0"
       >
-        <span class="pause-icon">{{ gameState.isPaused ? '▶' : '⏸' }}</span>
-        <span class="pause-text">{{ gameState.isPaused ? 'RESUME' : 'PAUSE' }}</span>
+        <span class="pause-icon">⏸</span>
+        <span class="pause-text">PAUSE</span>
       </button>
       <button 
         class="action-button reset-button" 
@@ -101,20 +97,32 @@
       </button>
     </div>
 
+    <!-- Resume Modal -->
+    <div 
+      v-if="showResumeModal" 
+      class="modal-overlay" 
+      @click="handleResume"
+    >
+      <div class="modal" @click.stop>
+        <h2>PAUSED</h2>
+        <p>Tap anywhere to continue</p>
+      </div>
+    </div>
+
     <!-- Reset Confirmation Modal -->
     <div 
       v-if="showResetConfirm" 
-      class="reset-modal-overlay" 
+      class="modal-overlay" 
       @click="showResetConfirm = false"
       role="dialog"
       aria-modal="true"
       aria-labelledby="reset-modal-title"
       aria-describedby="reset-modal-description"
     >
-      <div class="reset-modal" @click.stop>
+      <div class="modal" @click.stop>
         <h3 id="reset-modal-title">Reset Game?</h3>
         <p id="reset-modal-description">Are you sure you want to reset the current game? This will clear your progress.</p>
-        <div class="reset-modal-actions">
+        <div class="modal-actions">
           <button 
             class="modal-button cancel-button" 
             @click="showResetConfirm = false"
@@ -165,8 +173,9 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-// Reset confirmation modal state
+// Modal states
 const showResetConfirm = ref(false)
+const showResumeModal = ref(false)
 const resetConfirmButton = ref<HTMLElement | null>(null)
 
 // Touch interaction state
@@ -206,12 +215,8 @@ const handleTouchEnd = (e?: TouchEvent) => {
     const touchDuration = Date.now() - touchState.value.touchStartTime
     const action = touchState.value.activeButton
     
-    // Pause button is always responsive (mobile-first)
-    if (action === 'pause') {
-      handlePause()
-    }
-    // Other actions require quick tap and game to be playing/unpaused
-    else if (touchDuration < 500 && props.gameState.isPlaying && !props.gameState.isPaused) {
+    // Only handle game control buttons via touch (pause uses click events)
+    if (touchDuration < 500 && props.gameState.isPlaying && !props.gameState.isPaused) {
       switch (action) {
         case 'left':
         case 'right':
@@ -263,14 +268,32 @@ const handleDrop = () => {
   emit('drop')
 }
 
-// Mobile-first pause handler - primary method for pause/resume
+// Simplified pause handler - always pauses and shows resume modal
 const handlePause = () => {
-  if (!props.gameState.isPlaying) return
+  if (!props.gameState.isPlaying || props.gameState.isPaused) return
+  
+  // Pause the game
   emit('pause')
+  
+  // Show resume modal
+  showResumeModal.value = true
   
   // Provide haptic feedback for mobile users
   if ('vibrate' in navigator) {
     navigator.vibrate(20)
+  }
+}
+
+// Resume handler - resumes game and closes modal
+const handleResume = () => {
+  showResumeModal.value = false
+  
+  // Resume the game
+  emit('pause') // Toggle pause state
+  
+  // Provide haptic feedback
+  if ('vibrate' in navigator) {
+    navigator.vibrate(15)
   }
 }
 
@@ -279,7 +302,7 @@ const confirmReset = () => {
   emit('reset')
 }
 
-// Focus management for modal
+// Focus management for modals
 watch(showResetConfirm, async (isVisible) => {
   if (isVisible) {
     await nextTick()
@@ -287,10 +310,14 @@ watch(showResetConfirm, async (isVisible) => {
   }
 })
 
-// Handle escape key for modal
+// Handle escape key for modals
 const handleModalKeyDown = (e: KeyboardEvent) => {
   if (showResetConfirm.value && e.key === 'Escape') {
     showResetConfirm.value = false
+  }
+  if (showResumeModal.value && (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter')) {
+    e.preventDefault()
+    handleResume()
   }
 }
 
@@ -298,7 +325,7 @@ const handleModalKeyDown = (e: KeyboardEvent) => {
 // Keyboard controls for desktop (secondary input method)
 const handleKeyDown = (e: KeyboardEvent) => {
   // Only handle game controls when playing and not paused
-  if (props.gameState.isPlaying && !props.gameState.isPaused) {
+  if (props.gameState.isPlaying && !props.gameState.isPaused && !showResumeModal.value) {
     switch (e.code) {
       case 'ArrowLeft':
       case 'KeyA':
@@ -328,8 +355,8 @@ const handleKeyDown = (e: KeyboardEvent) => {
     }
   }
   
-  // Pause can be toggled anytime during gameplay (mobile-first: primarily via button)
-  if (props.gameState.isPlaying && e.code === 'Escape') {
+  // Pause can be triggered anytime during active gameplay
+  if (props.gameState.isPlaying && !props.gameState.isPaused && !showResumeModal.value && e.code === 'Escape') {
     e.preventDefault()
     handlePause()
   }
@@ -607,6 +634,10 @@ onUnmounted(() => {
   position: relative;
   font-weight: bold;
   min-width: 120px;
+  /* Enhanced mobile accessibility */
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(255, 152, 0, 0.3);
 }
 
 .pause-icon {
@@ -633,26 +664,7 @@ onUnmounted(() => {
   outline-offset: 2px;
 }
 
-.pause-button[aria-pressed="true"] {
-  background: #4CAF50;
-  border-color: #4CAF50;
-  color: #fff;
-  box-shadow: 0 4px 0 #2E7D32;
-  animation: pulse-resume 1.5s ease-in-out infinite;
-}
-
-.pause-button[aria-pressed="true"]:hover,
-.pause-button[aria-pressed="true"]:focus {
-  background: #66BB6A;
-  box-shadow: 0 6px 0 #2E7D32;
-  outline: 3px solid #81C784;
-  animation: none;
-}
-
-@keyframes pulse-resume {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
+/* Simplified pause button - no pressed states needed */
 
 .pause-button:active,
 .pause-button.touch-pressed {
@@ -686,51 +698,64 @@ onUnmounted(() => {
   box-shadow: 0 2px 0 #f44336;
 }
 
-/* Reset confirmation modal */
-.reset-modal-overlay {
+/* Modal system */
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  backdrop-filter: blur(4px);
 }
 
-.reset-modal {
+.modal {
   background: var(--theme-bg, #333);
   border: 3px solid var(--theme-primary, #00ff00);
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 32px;
   max-width: 400px;
   width: 100%;
-  box-shadow: var(--theme-shadow, none);
+  box-shadow: var(--theme-shadow, 0 8px 32px rgba(0, 0, 0, 0.5));
   text-align: center;
+  animation: modalSlideIn 0.3s ease-out;
 }
 
-.reset-modal h3 {
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal h2, .modal h3 {
   color: var(--theme-primary, #00ff00);
   font-family: monospace;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: bold;
   margin: 0 0 16px 0;
 }
 
-.reset-modal p {
+.modal p {
   color: var(--theme-text, #ccc);
   font-family: monospace;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.4;
   margin: 0 0 24px 0;
 }
 
-.reset-modal-actions {
+.modal-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
   flex-wrap: wrap;
 }
