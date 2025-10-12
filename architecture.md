@@ -105,23 +105,50 @@ sequenceDiagram
     Renderer->>User: Visual Feedback
 ```
 
-### Mobile Responsive Strategy
+### Mobile-First Side-by-Side Layout Architecture
 
 ```mermaid
 graph TD
-    DETECT[Screen Size Detection] --> MOBILE{Mobile?}
-    MOBILE -->|Yes| PORTRAIT{Portrait?}
-    MOBILE -->|No| DESKTOP[Desktop Layout]
+    VIEWPORT[Viewport Detection] --> LAYOUT{Screen Size}
+    LAYOUT -->|Mobile| SIDEBYSIDE[Side-by-Side Layout]
+    LAYOUT -->|Desktop| TRADITIONAL[Traditional Layout]
     
-    PORTRAIT -->|Yes| COMPACT[Compact Mobile Layout]
-    PORTRAIT -->|No| WIDE[Wide Mobile Layout]
+    SIDEBYSIDE --> GAMEBOARD[Game Board Left]
+    SIDEBYSIDE --> INFOPANEL[Info Panel Right]
+    SIDEBYSIDE --> CONTROLS[Controls Bottom]
     
-    COMPACT --> TOUCH[Touch Controls]
-    WIDE --> TOUCH
-    DESKTOP --> KEYBOARD[Keyboard Controls]
+    GAMEBOARD --> RESPONSIVE[Dynamic Sizing: calc(100vw - 110px)]
+    INFOPANEL --> COMPACT[Ultra-Compact: 100-140px width]
+    CONTROLS --> LARGE[Enhanced Touch: 75x75px buttons]
     
-    TOUCH --> GESTURES[Gesture Recognition]
-    KEYBOARD --> SHORTCUTS[Keyboard Shortcuts]
+    TRADITIONAL --> CENTERED[Centered Game Board]
+    TRADITIONAL --> SIDE[Side Info Panel]
+    TRADITIONAL --> FULLCONTROLS[Full-Size Controls]
+    
+    LARGE --> HAPTIC[Haptic Feedback System]
+    HAPTIC --> PATTERNS[Contextual Vibration Patterns]
+```
+
+### Responsive Breakpoint Strategy
+
+```mermaid
+graph LR
+    MOBILE[Mobile: ≤767px] --> PORTRAIT[Portrait Mode]
+    MOBILE --> LANDSCAPE[Landscape Mode]
+    
+    PORTRAIT --> SMALL[Small: ≤479px]
+    PORTRAIT --> MEDIUM[Medium: 480-767px]
+    
+    SMALL --> ULTRA[Ultra-Compact Layout]
+    MEDIUM --> COMPACT[Compact Layout]
+    LANDSCAPE --> WIDE[Wide Mobile Layout]
+    
+    DESKTOP[Desktop: ≥768px] --> STANDARD[Standard Layout]
+    
+    ULTRA --> CALC1[calc(100vw - 110px)]
+    COMPACT --> CALC2[calc(100vw - 150px)]
+    WIDE --> CALC3[calc(100vw - 200px)]
+    STANDARD --> FIXED[400px max-width]
 ```
 
 ## 🎮 Game Engine Architecture
@@ -464,6 +491,65 @@ graph TB
     INDEXED_DB --> GAME_STATISTICS[Game Statistics]
     CACHE_API --> STATIC_ASSETS[Static Assets]
 ```
+
+## 🎨 Theme System Architecture
+
+### Theme Management Flow
+
+```mermaid
+graph TD
+    INIT[App Initialization] --> LOAD[Load Theme System]
+    LOAD --> CHECK[Check localStorage]
+    CHECK --> SAVED{Saved Theme?}
+    
+    SAVED -->|Yes| APPLY[Apply Saved Theme]
+    SAVED -->|No| DEFAULT[Apply Classic Theme Default]
+    
+    APPLY --> CSS[Update CSS Variables]
+    DEFAULT --> CSS
+    
+    CSS --> PIECES[Set Piece Colors]
+    CSS --> EFFECTS[Apply Visual Effects]
+    CSS --> BODY[Set Body Class]
+    
+    USER[User Theme Change] --> SELECTOR[Theme Selector]
+    SELECTOR --> VALIDATE[Validate Theme]
+    VALIDATE --> SAVE[Save to localStorage]
+    SAVE --> CSS
+```
+
+### Theme Configuration Structure
+
+```typescript
+interface Theme {
+  id: string;              // 'classic', 'retro', 'neon', etc.
+  name: string;            // Display name
+  description: string;     // Theme description
+  colors: {
+    background: string;    // Main background
+    surface: string;       // Component surfaces
+    primary: string;       // Primary accent
+    secondary: string;     // Secondary accent
+    pieces: {              // Tetromino colors
+      I: string;           // Cyan piece
+      O: string;           // Yellow piece
+      T: string;           // Purple piece
+      // ... more pieces
+    }
+  };
+  effects?: {
+    glow?: boolean;        // CSS glow effects
+    shadows?: boolean;     // Drop shadows
+    animations?: boolean;  // CSS animations
+  }
+}
+```
+
+### Default Theme Priority
+
+1. **Classic Theme** (new default) - Traditional Tetris colors
+2. **User Saved Theme** - Retrieved from localStorage
+3. **Fallback Theme** - Classic if validation fails
 
 ---
 

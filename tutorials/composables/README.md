@@ -21,8 +21,9 @@ Composables in Tetrys follow these principles:
 |------------|---------|--------------|
 | `useTetris` | Game logic and state | Game loop, collision detection, scoring |
 | `useAudio` | Audio system management | Web Audio API, music tracks, sound effects |
-| `useTheme` | Theme switching system | CSS custom properties, persistence |
+| `useTheme` | Theme switching system | CSS custom properties, Classic default, persistence |
 | `useSpeed` | Game speed control | Speed multiplier, difficulty progression |
+| `useVibration` | Haptic feedback system | Contextual vibration patterns, settings management |
 
 ## 🎮 useTetris - Core Game Logic
 
@@ -368,8 +369,8 @@ const toggleMusic = async () => {
 
 ```typescript
 export function useTheme() {
-  // Current theme state
-  const currentThemeId = ref<ThemeId>('gameboy')
+  // Current theme state (Classic theme as default)
+  const currentThemeId = ref<ThemeId>('classic')
   
   // Computed theme object
   const currentTheme = computed<Theme>(() => themes[currentThemeId.value])
@@ -444,6 +445,98 @@ onMounted(() => {
   // Apply default theme
   applyThemeToDocument(currentTheme.value)
 })
+```
+
+## 📳 useVibration - Haptic Feedback System
+
+### Vibration System Architecture
+
+The haptic feedback system provides contextual vibration patterns for enhanced mobile gaming experience:
+
+```typescript
+export function useVibration() {
+  // Vibration settings with persistence
+  const settings = ref({
+    enabled: true,
+    intensity: 1.0
+  })
+  
+  // Contextual vibration patterns
+  const patterns = {
+    move: [8],                        // Short pulse for movement
+    rotate: [8, 20, 8],              // Double pulse for rotation  
+    drop: [15, 30, 15, 30, 15],      // Strong pattern for drop
+    lineClear: [20, 50, 20, 50, 20], // Celebration pattern
+    pause: [10, 50, 10],             // Pause confirmation
+    gameOver: [50, 100, 50, 100, 50] // Game over sequence
+  }
+  
+  // Vibrate with pattern
+  const vibrate = (action: keyof typeof patterns) => {
+    if (!settings.value.enabled || !('vibrate' in navigator)) {
+      return false
+    }
+    
+    const pattern = patterns[action]
+    const adjustedPattern = pattern.map(duration => 
+      Math.round(duration * settings.value.intensity)
+    )
+    
+    navigator.vibrate(adjustedPattern)
+    return true
+  }
+  
+  // Settings management
+  const toggleVibration = () => {
+    settings.value.enabled = !settings.value.enabled
+    saveSettings()
+    
+    // Test vibration when enabled
+    if (settings.value.enabled) {
+      vibrate('move')
+    }
+  }
+  
+  const setIntensity = (intensity: number) => {
+    settings.value.intensity = Math.max(0.1, Math.min(2.0, intensity))
+    saveSettings()
+    vibrate('move') // Test vibration
+  }
+  
+  return {
+    settings: computed(() => settings.value),
+    vibrate,
+    toggleVibration,
+    setIntensity,
+    isSupported: 'vibrate' in navigator
+  }
+}
+```
+
+### Vibration Pattern Design
+
+Each game action has a unique vibration pattern designed for:
+
+- **Movement** (left/right): Short 8ms pulse for quick response
+- **Rotation**: Double pulse (8ms, pause 20ms, 8ms) for confirmation
+- **Drop**: Extended pattern for satisfying feedback
+- **Line Clear**: Celebration pattern with rhythmic pulses
+- **Pause**: Confirmation pattern with distinctive timing
+- **Game Over**: Dramatic descending pattern
+
+### Integration with Game Controls
+
+```typescript
+// In GameControls.vue
+const { vibrate, settings: vibrationSettings } = useVibration()
+
+const handleTouchStart = (action: string) => {
+  // Trigger haptic feedback
+  vibrate(action as VibrationAction)
+  
+  // Execute game action
+  executeGameAction(action)
+}
 ```
 
 ## ⚡ useSpeed - Performance Control

@@ -8,11 +8,11 @@ This guide explores the Vue 3 components architecture in Tetrys, demonstrating m
 
 ```
 App.vue (Root)
-├── GameBoard.vue (Game Grid)
-├── GameControls.vue (User Input)
-├── ScoreBoard.vue (Statistics)
-├── NextPiece.vue (Preview)
-├── ThemeSelector.vue (Theme Switching)
+├── GameBoard.vue (Game Grid + Touch Gestures)
+├── GameControls.vue (Enhanced Mobile Controls + Haptic Feedback)
+├── ScoreBoard.vue (Ultra-Compact Statistics)
+├── NextPiece.vue (Optimized Preview)
+├── ThemeSelector.vue (Theme Switching - Classic Default)
 ├── AudioControls.vue (Audio Settings)
 └── SpeedControl.vue (Speed Adjustment)
 ```
@@ -21,13 +21,15 @@ App.vue (Root)
 
 ### App.vue - Application Root
 
-**Purpose**: Main application container, layout orchestration, global state coordination
+**Purpose**: Main application container, mobile-first side-by-side layout orchestration, global state coordination
 
 **Key Responsibilities**:
 - Game state management integration
+- Mobile-first side-by-side layout (game board left, info panel right)
 - Settings panel overlay handling
 - Global event listeners (keyboard, touch)
 - Layout switching between game and landing screens
+- Dynamic viewport sizing for optimal screen usage
 
 ```vue
 <script setup lang="ts">
@@ -60,13 +62,16 @@ const handleMove = (direction: 'left' | 'right' | 'down') => {
 
 ### GameBoard.vue - Game Grid Renderer
 
-**Purpose**: Renders the 20x10 Tetris game board with current piece overlay
+**Purpose**: Renders the 20x10 Tetris game board with current piece overlay and touch gesture support
 
 **Key Features**:
-- Dynamic grid generation
+- Dynamic grid generation with viewport-based sizing
 - Piece overlay rendering
 - Cell type-based styling
-- Responsive grid sizing
+- Touch gesture recognition (tap to rotate, swipe to move/drop)
+- Haptic feedback integration with contextual vibration patterns
+- Optimized for mobile side-by-side layout (calc(100vw - 110px) sizing)
+- ARIA labels for screen reader accessibility
 
 ```vue
 <template>
@@ -132,15 +137,18 @@ const displayBoard = computed(() => {
 - **Props Interface**: Type-safe component communication
 - **Dynamic Classes**: Conditional styling based on cell state
 
-### GameControls.vue - Input Handling
+### GameControls.vue - Enhanced Mobile Input Handling
 
-**Purpose**: Provides on-screen controls and handles user input events
+**Purpose**: Provides enhanced mobile-first controls with haptic feedback and accessibility features
 
 **Features**:
-- Touch-friendly button layout
-- Keyboard event handling
-- Game action coordination
-- Reset confirmation modal
+- Enhanced touch-friendly button layout (75x75px control buttons, 110x60px action buttons)
+- Rich haptic feedback with contextual vibration patterns
+- Keyboard event handling with mobile fallbacks
+- Game action coordination with audio feedback
+- Modal-based pause system (tap anywhere to resume)
+- Reset confirmation modal with accessibility
+- WCAG 2.1 AA compliant touch targets (56px+ minimum)
 
 ```vue
 <template>
@@ -215,10 +223,33 @@ const emit = defineEmits<Emits>()
 // Reset confirmation state
 const showResetConfirm = ref(false)
 
-// Touch handling for responsive controls
+// Enhanced touch handling with haptic feedback
 let touchRepeatInterval: number | null = null
 
+const vibratePattern = (action: string) => {
+  if (!('vibrate' in navigator)) return
+  
+  switch (action) {
+    case 'left':
+    case 'right':
+      navigator.vibrate(8) // Short pulse for movement
+      break
+    case 'rotate':
+      navigator.vibrate([8, 20, 8]) // Double pulse for rotation
+      break
+    case 'drop':
+      navigator.vibrate([15, 30, 15, 30, 15]) // Strong pattern for drop
+      break
+    case 'pause':
+      navigator.vibrate([10, 50, 10]) // Pause confirmation
+      break
+    default:
+      navigator.vibrate(5) // Default short pulse
+  }
+}
+
 const handleTouchStart = (direction: string) => {
+  vibratePattern(direction) // Add haptic feedback
   handleSingleAction(direction)
   
   // Start repeating action for held touches
@@ -249,9 +280,15 @@ const confirmReset = () => {
 
 ## 📊 Display Components
 
-### ScoreBoard.vue - Game Statistics
+### ScoreBoard.vue - Ultra-Compact Game Statistics
 
-**Purpose**: Displays current game statistics and progression
+**Purpose**: Displays current game statistics in ultra-compact format for mobile side-by-side layout
+
+**Key Features**:
+- Ultra-compact design (9px labels, 14px values) optimized for 100-140px width
+- Responsive breakpoints for mobile side-by-side positioning
+- Enhanced accessibility with ARIA labels
+- Minimal padding and spacing for maximum information density
 
 ```vue
 <template>
@@ -315,9 +352,15 @@ const linesUntilNextLevel = computed(() => {
 </script>
 ```
 
-### NextPiece.vue - Piece Preview
+### NextPiece.vue - Optimized Piece Preview
 
-**Purpose**: Shows the next tetromino piece to help player strategy
+**Purpose**: Shows the next tetromino piece in compact format optimized for mobile side layout
+
+**Key Features**:
+- Compact side layout with 10x10px cell sizes for mobile optimization
+- Mobile-specific responsive breakpoints
+- Enhanced accessibility with ARIA labels and role attributes
+- Optimized for 100-140px width info panel
 
 ```vue
 <template>
@@ -596,37 +639,135 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 ```
 
-## 📱 Mobile-First Component Design
+## 📱 Mobile-First Side-by-Side Layout Architecture
+
+### Layout Structure
+
+The mobile-first design implements a side-by-side layout optimized for single-screen gameplay:
+
+```vue
+<template>
+  <div class="game-layout" v-if="gameState.isPlaying">
+    <div class="game-area">
+      <!-- Game Board Left -->
+      <GameBoard 
+        class="game-board-container" 
+        :style="{ 
+          maxWidth: 'calc(100vw - 130px)',
+          height: 'calc(100vh - 200px)',
+          minHeight: '450px',
+          maxHeight: '700px'
+        }"
+      />
+      
+      <!-- Info Panel Right -->
+      <div class="info-panel">
+        <ScoreBoard />
+        <NextPiece />
+      </div>
+    </div>
+    
+    <!-- Controls Bottom -->
+    <GameControls />
+  </div>
+</template>
+
+<style scoped>
+.game-area {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.info-panel {
+  flex-direction: column;
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.game-board-container {
+  flex: 1;
+  min-width: 0; /* Allows flex shrinking */
+}
+</style>
+```
+
+### Mobile Layout Benefits
+
+1. **Single-Screen Fit**: No scrolling required on any mobile device
+2. **Maximum Game Board**: Dynamic sizing uses all available screen space
+3. **Accessible Info**: Score and next piece always visible on the right
+4. **Enhanced Controls**: Large touch targets at bottom for thumb access
 
 ### Touch-Optimized Components
 
 ```vue
 <style scoped>
-/* Mobile-first base styles */
+/* Enhanced mobile-first touch targets */
 .control-button {
-  min-height: 48px; /* Touch target minimum */
-  min-width: 48px;
-  font-size: 16px;
-  padding: 12px;
+  width: 75px;
+  height: 75px;
+  font-size: 26px;
+  border: 3px solid var(--theme-border);
+  border-radius: 12px;
+  background: var(--theme-surface);
+  color: var(--theme-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.1s ease;
 }
 
-/* Tablet enhancement */
+.action-button {
+  width: 110px;
+  height: 60px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 2px solid var(--theme-border);
+  border-radius: 8px;
+  background: var(--theme-primary);
+  color: var(--theme-text);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+/* Hover and active states */
+.control-button:active,
+.action-button:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+/* Tablet optimization */
 @media (min-width: 768px) {
   .control-button {
-    min-height: 44px;
-    min-width: 44px;
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+  }
+  
+  .action-button {
+    width: 90px;
+    height: 50px;
     font-size: 14px;
-    padding: 10px;
   }
 }
 
 /* Desktop optimization */
 @media (min-width: 1024px) {
   .control-button {
-    min-height: 40px;
-    min-width: 40px;
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+  }
+  
+  .action-button {
+    width: 80px;
+    height: 40px;
     font-size: 12px;
-    padding: 8px;
   }
 }
 </style>

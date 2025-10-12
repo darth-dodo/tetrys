@@ -17,10 +17,11 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 - **ESLint + Prettier** for code quality and consistency
 
 ### 🎨 Visual Experience
-- **8 Stunning Themes**: Retro, Neon, Classic, Ocean, Sunset, Minimal, Matrix, Game Boy
+- **8 Stunning Themes**: Classic (default), Retro, Neon, Ocean, Sunset, Minimal, Matrix, Game Boy
+- **Mobile-First Layout**: Side-by-side design with game board left, info panel right
+- **Optimized Screen Usage**: Dynamic viewport sizing for maximum gameplay area
 - **Smooth Animations**: CSS transitions and transforms for polished UX
-- **Responsive Design**: Mobile-first approach with desktop enhancements
-- **Accessibility**: WCAG 2.1 AA compliant with keyboard navigation
+- **Accessibility**: WCAG 2.1 AA compliant with 56px+ touch targets
 
 ### 🎵 Audio System
 - **8-bit Sound Effects**: Move, rotate, drop, line clear, and game over sounds
@@ -37,8 +38,11 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 - **In-Game Reset**: Instant game restart with confirmation modal
 
 ### 📱 Mobile Optimization
-- **Touch Controls**: Intuitive swipe and tap gestures
-- **Responsive Layout**: Optimized for phones, tablets, and desktops
+- **Side-by-Side Layout**: Game board left, compact info panel right for single-screen play
+- **Enhanced Touch Controls**: 75x75px control buttons with rich haptic feedback
+- **Contextual Vibration**: Different vibration patterns for each game action
+- **Dynamic Sizing**: Viewport-based calculations for optimal screen space usage
+- **Single-Screen Fit**: No scrolling required on any mobile device
 - **Performance**: 60fps target with optimized rendering
 - **PWA Ready**: Service worker and manifest for app-like experience
 
@@ -104,11 +108,12 @@ npm run type-check
 - **R**: Reset current game
 
 ### Mobile
-- **Swipe Left/Right**: Move piece horizontally
-- **Swipe Down**: Soft drop
-- **Tap**: Rotate piece
-- **Long Press**: Hard drop
-- **Settings**: Access via gear icon
+- **Game Board Touch**: Tap to rotate, swipe left/right to move, swipe down to drop
+- **Control Buttons**: Enhanced 75x75px buttons with haptic feedback
+- **Swipe Gestures**: Intuitive directional controls on game board
+- **Vibration Feedback**: Contextual haptic patterns for different actions
+- **Side Panel**: Compact score and next piece info on the right
+- **Settings**: Access via gear icon in header
 
 ## 🏗️ Project Structure
 
