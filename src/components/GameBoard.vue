@@ -176,17 +176,19 @@ const getCellClass = (cell: TetrominoType | null): string => {
 <style scoped>
 .game-board-container {
   width: 100%;
-  max-width: 320px;
-  height: 560px;
+  max-width: calc(100vw - 130px);
+  height: calc(100vh - 200px);
+  min-height: 450px;
+  max-height: 700px;
   border: 3px solid var(--theme-border, #00ff00);
   background: var(--theme-bg, #000);
-  margin: 0 auto;
   box-shadow: var(--theme-shadow, 0 4px 12px rgba(0, 0, 0, 0.4));
   border-radius: 8px;
   touch-action: none;
   user-select: none;
   position: relative;
   overflow: hidden;
+  flex: 1;
 }
 
 .game-board {
@@ -221,67 +223,57 @@ const getCellClass = (cell: TetrominoType | null): string => {
 .piece-j { background: var(--piece-j, #0000ff); }
 .piece-l { background: var(--piece-l, #ff8000); }
 
-/* Mobile-first responsive board sizing */
-@media (max-width: 480px) {
+/* Mobile responsive board sizing for side-by-side layout */
+@media (max-width: 479px) {
   .game-board-container {
-    max-width: 300px;
-    height: 520px;
+    max-width: calc(100vw - 110px);
+    height: calc(100vh - 180px);
+    min-height: 400px;
+    max-height: 550px;
   }
 }
 
-@media (max-width: 400px) {
+@media (min-width: 480px) and (max-width: 767px) {
   .game-board-container {
-    max-width: 280px;
-    height: 480px;
+    max-width: calc(100vw - 150px);
+    height: calc(100vh - 200px);
+    min-height: 460px;
+    max-height: 620px;
   }
 }
 
-@media (max-width: 360px) {
-  .game-board-container {
-    max-width: 260px;
-    height: 450px;
-  }
-}
-
-@media (max-width: 320px) {
-  .game-board-container {
-    max-width: 240px;
-    height: 420px;
-  }
-}
-
-/* Height-based adjustments */
-@media (max-height: 700px) {
-  .game-board-container {
-    height: 450px;
-  }
-}
-
+/* Height-based adjustments for short screens */
 @media (max-height: 600px) {
   .game-board-container {
-    height: 400px;
+    height: calc(100vh - 160px);
+    min-height: 320px;
   }
 }
 
 @media (max-height: 500px) {
   .game-board-container {
-    height: 320px;
+    height: calc(100vh - 140px);
+    min-height: 300px;
   }
 }
 
 /* Landscape mobile optimization */
 @media (max-height: 500px) and (orientation: landscape) {
   .game-board-container {
-    max-width: 240px;
-    height: 300px;
+    max-width: calc(100vw - 200px);
+    height: calc(100vh - 120px);
+    min-height: 280px;
+    max-height: 350px;
   }
 }
 
 /* Large tablets and desktop */
 @media (min-width: 768px) {
   .game-board-container {
-    max-width: 360px;
-    height: 640px;
+    max-width: 400px;
+    height: calc(100vh - 180px);
+    min-height: 580px;
+    max-height: 720px;
   }
 }
 </style>
