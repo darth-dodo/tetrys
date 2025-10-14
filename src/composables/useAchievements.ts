@@ -228,6 +228,31 @@ export function useAchievements() {
     saveAchievements()
   }
 
+  // DEV: Trigger placeholder achievement (for testing UI)
+  const triggerDevAchievement = (rarity: 'common' | 'rare' | 'epic' | 'legendary' = 'legendary') => {
+    const devAchievement: Achievement = {
+      id: `dev_test_${Date.now()}` as AchievementId,
+      name: rarity === 'legendary' ? '🎉 Dev Achievement!' :
+            rarity === 'epic' ? '⚡ Epic Test!' :
+            rarity === 'rare' ? '💎 Rare Test!' : '✨ Common Test!',
+      description: `This is a ${rarity} placeholder achievement for development testing`,
+      icon: rarity === 'legendary' ? '🏆' :
+            rarity === 'epic' ? '🌟' :
+            rarity === 'rare' ? '💫' : '⭐',
+      category: 'gameplay',
+      condition: {
+        type: 'lines',
+        value: 1,
+        operator: 'gte'
+      },
+      rarity,
+      rewardMessage: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} achievement triggered for dev testing!`
+    }
+
+    pendingNotifications.value.push(devAchievement)
+    console.log(`🎮 Dev Achievement Triggered (${rarity}):`, devAchievement)
+  }
+
   // Initialize on first use
   loadAchievements()
 
@@ -250,6 +275,9 @@ export function useAchievements() {
     getNextNotification,
     clearNotifications,
     updateSessionStats,
-    resetAchievements
+    resetAchievements,
+
+    // Dev Tools
+    triggerDevAchievement
   }
 }

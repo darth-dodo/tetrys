@@ -1,5 +1,8 @@
 <template>
   <div class="app">
+    <!-- Achievement Notification Overlay -->
+    <AchievementNotification />
+
     <!-- Header only shown during gameplay -->
     <header class="header" v-if="gameState.isPlaying || gameState.isGameOver">
       <h1 class="title">TETRYS</h1>
@@ -117,11 +120,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useTetris } from '@/composables/useTetris'
 import { useTheme } from '@/composables/useTheme'
 import { useAudio } from '@/composables/useAudio'
 import { useSpeed } from '@/composables/useSpeed'
+import { useAchievements } from '@/composables/useAchievements'
 import GameBoard from '@/components/GameBoard.vue'
 import GameControls from '@/components/GameControls.vue'
 import NextPiece from '@/components/NextPiece.vue'
@@ -129,6 +133,7 @@ import ScoreBoard from '@/components/ScoreBoard.vue'
 import ThemeSelector from '@/components/ThemeSelector.vue'
 import AudioControls from '@/components/AudioControls.vue'
 import SpeedControl from '@/components/SpeedControl.vue'
+import AchievementNotification from '@/components/AchievementNotification.vue'
 
 // Settings panel state
 const showSettings = ref(false)
@@ -141,6 +146,9 @@ const { playSound, startMusic, stopMusic, pauseMusic, resumeMusic, isMusicEnable
 
 // Use speed system
 const { speedMultiplier, setSpeed } = useSpeed()
+
+// Use achievements system
+const { triggerDevAchievement } = useAchievements()
 
 // Use the Tetris game logic
 const {
@@ -220,12 +228,42 @@ const handleReset = (): void => {
 // Handle settings panel close with audio context resume
 const closeSettings = async (): Promise<void> => {
   showSettings.value = false
-  
+
   // Ensure music continues playing if it was enabled and the game is running
   if (gameState.value.isPlaying && isMusicEnabled.value && !gameState.value.isPaused) {
     await resumeMusic()
   }
 }
+
+// DEV: Keyboard shortcut for testing achievements (Ctrl/Cmd + Shift + A)
+const handleDevKeyPress = (e: KeyboardEvent) => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+    e.preventDefault()
+    const rarities: Array<'common' | 'rare' | 'epic' | 'legendary'> = ['common', 'rare', 'epic', 'legendary']
+    const randomRarity = rarities[Math.floor(Math.random() * rarities.length)]
+    triggerDevAchievement(randomRarity)
+    console.log('🎮 Dev shortcut triggered! Press Ctrl/Cmd+Shift+A for random achievement')
+  }
+}
+
+// DEV: Expose achievement trigger to window for console access
+if (import.meta.env.DEV) {
+  (window as any).__triggerAchievement = (rarity?: 'common' | 'rare' | 'epic' | 'legendary') => {
+    triggerDevAchievement(rarity)
+  }
+  console.log('🎮 Dev Mode: Use __triggerAchievement("legendary") in console or press Ctrl/Cmd+Shift+A')
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleDevKeyPress)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleDevKeyPress)
+  if (import.meta.env.DEV) {
+    delete (window as any).__triggerAchievement
+  }
+})
 
 // Prevent context menu on long press (mobile)
 document.addEventListener('contextmenu', (e) => {
