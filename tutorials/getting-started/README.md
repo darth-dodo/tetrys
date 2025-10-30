@@ -93,7 +93,41 @@ tetrys/
 
 ## 🔧 Development Scripts
 
-### Core Commands
+### Using Makefile (Recommended ✨)
+
+Tetrys includes a comprehensive Makefile for streamlined development:
+
+```bash
+# View all available commands
+make help
+
+# Quick start commands
+make install        # Install dependencies
+make dev            # Start development server
+make build          # Build for production
+make test           # Run all tests
+make quality        # Run all quality checks (lint + type-check + test)
+
+# Git workflow
+make worktree-create BRANCH=feature-name  # Create new worktree
+make worktree-list                        # List all worktrees
+make sync-main                            # Pull latest from origin/main
+
+# Deployment
+make deploy-netlify                       # Deploy to Netlify
+make build-deploy                         # Full pipeline: quality + build + deploy
+
+# Utilities
+make clean          # Remove build artifacts
+make format         # Format code with Prettier
+make audit          # Check for security vulnerabilities
+make info           # Show project information
+```
+
+**See [Makefile](../../Makefile) for complete command reference**
+
+### npm Scripts (Alternative)
+
 ```bash
 # Development server (hot reload)
 npm run dev
@@ -113,14 +147,16 @@ npm run test:watch
 
 ### Code Quality
 ```bash
-# Type checking
+# Using Make (recommended)
+make quality        # Run all quality checks
+make lint           # ESLint with auto-fix
+make type-check     # TypeScript type checking
+make format         # Format code with Prettier
+
+# Using npm
 npm run type-check
-
-# Linting (auto-fix)
 npm run lint
-
-# Format code with Prettier
-npm run format
+npm run format      # (if script exists)
 ```
 
 ## 🎯 Your First Change
