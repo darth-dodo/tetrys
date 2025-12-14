@@ -18,12 +18,18 @@ export function useSpeed() {
     if (saved) {
       try {
         const parsed = parseFloat(saved)
-        if (!isNaN(parsed) && parsed > 0 && parsed <= 3) {
+        if (!isNaN(parsed) && parsed >= 0.5 && parsed <= 3) {
           speedMultiplier.value = parsed
+        } else {
+          // Invalid range - reset to default
+          speedMultiplier.value = DEFAULT_SPEED
         }
       } catch (e) {
         speedMultiplier.value = DEFAULT_SPEED
       }
+    } else {
+      // No saved data - reset to default
+      speedMultiplier.value = DEFAULT_SPEED
     }
   }
   
