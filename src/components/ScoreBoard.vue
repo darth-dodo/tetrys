@@ -22,14 +22,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
 import type { GameState } from '@/types/tetris'
 
 interface Props {
   gameState: GameState
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 
 // Format numbers with commas

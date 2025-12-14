@@ -142,7 +142,7 @@ const showSettings = ref(false)
 useTheme()
 
 // Use audio system
-const { playSound, startMusic, stopMusic, pauseMusic, resumeMusic, isMusicEnabled } = useAudio()
+const { playSound, startMusic, pauseMusic, resumeMusic, isMusicEnabled } = useAudio()
 
 // Use speed system
 const { speedMultiplier, setSpeed } = useSpeed()
@@ -196,9 +196,8 @@ const startGame = () => {
 }
 
 const pauseGame = () => {
-  const wasPaused = gameState.value.isPaused
   originalPauseGame()
-  
+
   // Audio logic based on the NEW state (after toggle)
   if (gameState.value.isPaused) {
     // Game just got paused
