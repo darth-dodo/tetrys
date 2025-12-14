@@ -675,7 +675,7 @@ describe('useAchievements localStorage Persistence', () => {
     it('should gracefully degrade when storage is full', async () => {
       // Given: Simulate storage being full
       const originalSetItem = localStorage.setItem
-      let storageFullAfter = 3
+      const storageFullAfter = 3
       let setCount = 0
       localStorage.setItem = vi.fn((key: string, value: string) => {
         setCount++
