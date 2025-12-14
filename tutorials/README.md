@@ -21,6 +21,7 @@ Deep dive into the major systems and patterns used in Tetrys.
 - [🎵 Audio System](./composables/audio-system.md) - Web Audio API implementation
 - [🎮 Game State Management](./composables/game-state.md) - Core game logic and state
 - [🎨 Theme System](./composables/theme-system.md) - Dynamic theming with CSS custom properties
+- [🏆 Achievement System](./composables/achievements.md) - 74 achievements across 7 categories
 - [🧩 Component Architecture](./components/component-architecture.md) - Component design patterns
 
 ## 🔧 Development & Deployment
@@ -29,6 +30,15 @@ Guides for testing, building, and deploying Tetrys.
 
 - [🧪 Testing Guide](./testing/README.md) - Comprehensive testing strategies
 - [🚀 Deployment Guide](./deployment/README.md) - Platform-specific deployment instructions
+- [🔄 CI/CD Integration](./development/ci-cd-integration.md) - Test coverage and automation
+- [📱 Mobile Development](./development/mobile-development.md) - Touch controls and responsive design
+- [⚡ Performance Optimization](./development/performance-optimization.md) - 60fps gameplay and bundle optimization
+
+## 📚 API Reference
+
+Complete API documentation for all composables and utilities.
+
+- [🔌 Composables API Reference](./api/composables-reference.md) - Complete API documentation for all 5 composables
 
 ## 🎯 Quick References
 
@@ -124,21 +134,24 @@ Interested in contributing to Tetrys? Here's how to get started:
 ## 📊 Performance
 
 Tetrys is built for performance with these targets:
-- **60fps gameplay** on modern devices
-- **<3s load time** on 3G networks
-- **<100KB gzipped** bundle size
+- **60fps gameplay** on modern devices ✅
+- **<50KB gzipped** bundle size (current: 41.86KB) ✅
 - **90+ Lighthouse scores** on all metrics
-- **Mobile-optimized** rendering
+- **82%+ test coverage** with 580 passing tests ✅
+- **Mobile-optimized** rendering with touch controls ✅
 
 ## 🔮 Roadmap
 
 Future enhancements planned for Tetrys:
+- [x] **Achievement system** - 74 achievements across 7 categories ✅
+- [x] **Comprehensive documentation** - 11,000+ lines of guides ✅
+- [x] **CI/CD integration** - Automated testing and coverage ✅
 - [ ] Multiplayer support with WebRTC
 - [ ] Tournament mode with leaderboards
-- [ ] Custom piece skins and themes
-- [ ] Advanced statistics and analytics
+- [ ] Custom piece skins and color themes
+- [ ] Advanced statistics dashboard
 - [ ] Social sharing integration
-- [ ] Achievement system
+- [ ] Progressive Web App offline support
 
 ## 📄 License
 
