@@ -9,13 +9,17 @@
     "build:type-check": "vue-tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
+    "test:ci": "vitest run --coverage --reporter=verbose",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
+    "vite": "^5.4.19",
     "vue": "^3.4.29",
-    "vue-tsc": "^2.0.11",
-    "vite": "^5.4.19"
+    "vue-tsc": "^2.0.11"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.8.0",
@@ -23,6 +27,7 @@
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^20.12.5",
     "@vitejs/plugin-vue": "^5.0.4",
+    "@vitest/coverage-v8": "^4.0.15",
     "@vue/eslint-config-prettier": "^9.0.0",
     "@vue/eslint-config-typescript": "^13.0.0",
     "@vue/test-utils": "^2.4.6",
@@ -35,6 +40,6 @@
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.4",
     "typescript": "~5.4.0",
-    "vitest": "^1.6.0"
+    "vitest": "^4.0.15"
   }
 }

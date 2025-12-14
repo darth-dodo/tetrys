@@ -36,14 +36,50 @@ export function useAchievements() {
           ...unlock,
           unlockedAt: new Date(unlock.unlockedAt)
         }))
+      } else {
+        // Reset to empty when no data in localStorage
+        unlockedAchievements.value = []
       }
+
+      // Clear pending notifications on load
+      pendingNotifications.value = []
 
       const storedStats = localStorage.getItem(STATS_KEY)
       if (storedStats) {
-        sessionStats.value = { ...sessionStats.value, ...JSON.parse(storedStats) }
+        // Reset to defaults first, then merge with loaded stats
+        const defaultStats = {
+          linesCleared: 0,
+          tetrisCount: 0,
+          maxCombo: 0,
+          gamesPlayed: 0,
+          totalLinesCleared: 0,
+          timePlayed: 0
+        }
+        sessionStats.value = { ...defaultStats, ...JSON.parse(storedStats) }
+      } else {
+        // Reset to defaults when no stats in localStorage
+        sessionStats.value = {
+          linesCleared: 0,
+          tetrisCount: 0,
+          maxCombo: 0,
+          gamesPlayed: 0,
+          totalLinesCleared: 0,
+          timePlayed: 0
+        }
       }
     } catch (error) {
       console.error('Failed to load achievements:', error)
+      // Reset to defaults on error
+      unlockedAchievements.value = []
+      pendingNotifications.value = []
+      sessionStats.value = {
+        linesCleared: 0,
+        tetrisCount: 0,
+        maxCombo: 0,
+        gamesPlayed: 0,
+        totalLinesCleared: 0,
+        timePlayed: 0
+      }
     }
   }
 

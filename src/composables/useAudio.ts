@@ -489,6 +489,9 @@ export function useAudio() {
       } catch (e) {
         settings.value = { ...DEFAULT_SETTINGS }
       }
+    } else {
+      // Reset to defaults when localStorage is empty
+      settings.value = { ...DEFAULT_SETTINGS }
     }
   }
   
