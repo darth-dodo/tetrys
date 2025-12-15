@@ -442,6 +442,9 @@ export function useAudio() {
       } catch (e) {
         settings.value = { ...DEFAULT_SETTINGS }
       }
+    } else {
+      // Reset to defaults if no saved settings
+      settings.value = { ...DEFAULT_SETTINGS }
     }
   }
 

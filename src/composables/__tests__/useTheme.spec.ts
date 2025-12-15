@@ -77,7 +77,8 @@ describe('useTheme Theme Management', () => {
       await flushPromises()
 
       // Assert - Check CSS custom properties are set
-      expect(document.documentElement.style.getPropertyValue('--theme-bg')).toBe('#222222')
+      const root = document.documentElement
+      expect(root.style.getPropertyValue('--theme-bg')).toBe('#222222')
       expect(root.style.getPropertyValue('--theme-primary')).toBe('#4a90e2')
       expect(root.style.getPropertyValue('--theme-text')).toBe('#ffffff')
 
