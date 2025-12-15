@@ -25,6 +25,9 @@ const sessionStats = ref({
 // Pending notifications queue
 const pendingNotifications = ref<Achievement[]>([])
 
+// Track if achievements have been initialized
+let isInitialized = false
+
 export function useAchievements() {
   // Load achievements from localStorage
   const loadAchievements = () => {
@@ -41,8 +44,11 @@ export function useAchievements() {
         unlockedAchievements.value = []
       }
 
-      // Clear pending notifications on load
-      pendingNotifications.value = []
+      // Only clear pending notifications on first initialization
+      // This prevents clearing notifications when useAchievements() is called multiple times
+      if (!isInitialized) {
+        pendingNotifications.value = []
+      }
 
       const storedStats = localStorage.getItem(STATS_KEY)
       if (storedStats) {
@@ -261,6 +267,7 @@ export function useAchievements() {
       timePlayed: 0
     }
     pendingNotifications.value = []
+    isInitialized = false // Reset initialization flag for tests
     saveAchievements()
   }
 
@@ -289,7 +296,10 @@ export function useAchievements() {
     console.log(`🎮 Dev Achievement Triggered (${rarity}):`, devAchievement)
   }
 
-  // Initialize on first use
+  // Always load achievements (allows tests to reload), but only mark as initialized on first call
+  if (!isInitialized) {
+    isInitialized = true
+  }
   loadAchievements()
 
   return {
