@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
+  // @ts-expect-error - Vite/Vitest plugin type mismatch (known issue)
   plugins: [vue()],
   test: {
     environment: 'jsdom',
