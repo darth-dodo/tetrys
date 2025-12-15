@@ -36,6 +36,7 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 - **Classic Tetris Gameplay**: All 7 tetromino pieces with proper physics
 - **Progressive Difficulty**: Speed increases with level progression
 - **Scoring System**: Points based on lines cleared and level multiplier
+- **Achievement System**: 74 achievements across 7 categories with animated notifications
 - **Persistent Settings**: Theme, audio, and speed preferences saved locally
 - **Pause/Resume**: Full game state management with audio coordination
 - **In-Game Reset**: Instant game restart with confirmation modal
@@ -256,12 +257,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔮 Roadmap
 
+- [x] Achievement system (74 achievements with notifications) ✨
 - [ ] Multiplayer support with WebRTC
-- [ ] Tournament mode with leaderboards  
+- [ ] Tournament mode with leaderboards
 - [ ] Custom piece skins
 - [ ] Advanced statistics and analytics
 - [ ] Social sharing integration
-- [ ] Achievement system
 
 ---
 
