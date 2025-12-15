@@ -1,46 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { useTetris } from '@/composables/useTetris'
-import { TETROMINO_SHAPES, BOARD_WIDTH, BOARD_HEIGHT } from '@/types/tetris'
-import type { TetrominoType, TetrominoShape, Position } from '@/types/tetris'
+import { BOARD_WIDTH, BOARD_HEIGHT } from '@/types/tetris'
 
 /**
  * Test Helpers
  */
-
-/**
- * Creates a board with specific cells filled
- * @param filledCells - Array of [x, y, type] tuples representing filled positions
- * @returns A game board with specified cells filled
- */
-function createBoardWithFilledCells(
-  filledCells: Array<[number, number, TetrominoType]>
-): (TetrominoType | null)[][] {
-  const board: (TetrominoType | null)[][] = Array(BOARD_HEIGHT)
-    .fill(null)
-    .map(() => Array(BOARD_WIDTH).fill(null))
-
-  filledCells.forEach(([x, y, type]) => {
-    if (y >= 0 && y < BOARD_HEIGHT && x >= 0 && x < BOARD_WIDTH) {
-      board[y][x] = type
-    }
-  })
-
-  return board
-}
-
-/**
- * Creates a test piece with specific shape
- * @param type - The tetromino type
- * @param rotationIndex - The rotation index (default: 0)
- * @returns A TetrominoShape object
- */
-function createTestPiece(type: TetrominoType, rotationIndex = 0): TetrominoShape {
-  const shapes = TETROMINO_SHAPES[type]
-  return {
-    shape: shapes[rotationIndex % shapes.length],
-    type
-  }
-}
 
 describe('useTetris - Collision Detection', () => {
   let tetris: ReturnType<typeof useTetris>
@@ -118,7 +82,6 @@ describe('useTetris - Collision Detection', () => {
         expect(state.isPlaying).toBe(true)
 
         // T piece should be able to rotate on empty board
-        const initialRotation = JSON.stringify(state.currentPiece?.shape)
         tetris.rotatePiece()
         const afterRotation = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
 
@@ -647,7 +610,6 @@ describe('useTetris - Collision Detection', () => {
           // Move left
         }
 
-        const shapeBeforeRotate = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
         tetris.rotatePiece()
         const shapeAfterRotate = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
 
@@ -675,12 +637,10 @@ describe('useTetris - Collision Detection', () => {
 
       if (tetris.gameState.value.currentPiece?.type === 'T') {
         // Try to rotate on empty board (should succeed)
-        const shapeBeforeRotate = tetris.gameState.value.currentPiece.shape
         tetris.rotatePiece()
-        const shapeAfterRotate = tetris.gameState.value.currentPiece.shape
 
         // Rotation should work on empty board
-        expect(shapeAfterRotate).toBeDefined()
+        expect(tetris.gameState.value.currentPiece.shape).toBeDefined()
         expect(tetris.gameState.value.isPlaying).toBe(true)
       }
     })

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { useTheme } from '../useTheme'
-import { clearLocalStorage, getLocalStorageData } from '@//__tests__/helpers'
+import { clearLocalStorage } from '@//__tests__/helpers'
 import type { ThemeId } from '@/types/theme'
 
 /**
@@ -77,8 +77,7 @@ describe('useTheme Theme Management', () => {
       await flushPromises()
 
       // Assert - Check CSS custom properties are set
-      const root = document.documentElement
-      expect(root.style.getPropertyValue('--theme-bg')).toBe('#222222')
+      expect(document.documentElement.style.getPropertyValue('--theme-bg')).toBe('#222222')
       expect(root.style.getPropertyValue('--theme-primary')).toBe('#4a90e2')
       expect(root.style.getPropertyValue('--theme-text')).toBe('#ffffff')
 
@@ -432,7 +431,6 @@ describe('useTheme Theme Management', () => {
       const component = createThemeTestComponent()
       const wrapper = mount(component)
       await flushPromises()
-      const currentTheme = wrapper.vm.theme.currentTheme.value
 
       // Act & Assert - Verify themes in availableThemes have valid structure
       const availableThemes = wrapper.vm.theme.availableThemes.value
@@ -456,7 +454,6 @@ describe('useTheme Theme Management', () => {
       await flushPromises()
 
       // Act - Try to set theme (all theme IDs are valid in this implementation)
-      const initialTheme = wrapper.vm.theme.currentTheme.value
       wrapper.vm.theme.setTheme('classic')
       await flushPromises()
 
@@ -605,7 +602,6 @@ describe('useTheme Theme Management', () => {
       const component = createThemeTestComponent()
       const wrapper = mount(component)
       await flushPromises()
-      const root = document.documentElement
 
       // Act - Change themes rapidly
       const themes: ThemeId[] = ['neon', 'ocean', 'retro', 'matrix']

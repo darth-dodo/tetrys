@@ -45,23 +45,6 @@ function createBoardWithPartialRows(
   return board
 }
 
-/**
- * Creates a board with specific pattern
- * @param pattern - Array of arrays representing the board state
- */
-function createBoardFromPattern(
-  pattern: (TetrominoType | null)[][]
-): (TetrominoType | null)[][] {
-  const board = createEmptyBoard()
-  pattern.forEach((row, rowIndex) => {
-    board[rowIndex] = [...row]
-  })
-  return board
-}
-
-/**
- * Counts non-null cells in a board
- */
 function countFilledCells(board: (TetrominoType | null)[][]): number {
   return board.reduce((count, row) =>
     count + row.filter(cell => cell !== null).length, 0

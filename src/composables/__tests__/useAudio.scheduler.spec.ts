@@ -301,18 +301,16 @@ describe('MusicScheduler - Lookahead Scheduling System', () => {
 
     it('should schedule multiple notes in one lookahead cycle', () => {
       scheduler.start()
-      const initialCreateOscillatorCalls = audioContext.createOscillator.mock.calls.length
 
       // Advance time within lookahead window
       vi.advanceTimersByTime(50)
 
       // May schedule more notes depending on note durations
-      expect(audioContext.createOscillator.mock.calls.length).toBeGreaterThanOrEqual(initialCreateOscillatorCalls)
+      expect(audioContext.createOscillator).toHaveBeenCalled()
     })
 
     it('should not schedule beyond lookahead window', () => {
       scheduler.start()
-      const createOscillatorCalls = audioContext.createOscillator.mock.calls.length
 
       // Advance by 50ms
       vi.advanceTimersByTime(50)
@@ -795,7 +793,6 @@ describe('MusicScheduler - Lookahead Scheduling System', () => {
       expect(scheduler.getPlayingState()).toBe(true)
 
       // Note index should be preserved during pause/resume
-      const noteIndexBeforeStop = scheduler.getCurrentNoteIndex()
       scheduler.stop()
       expect(scheduler.getCurrentNoteIndex()).toBe(0)
     })

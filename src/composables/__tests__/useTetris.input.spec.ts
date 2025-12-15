@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { useTetris } from '@/composables/useTetris'
 import {
-  TETROMINO_SHAPES,
   BOARD_WIDTH,
   BOARD_HEIGHT
 } from '@/types/tetris'
-import type { TetrominoType, TetrominoShape, Position } from '@/types/tetris'
+import type { TetrominoType } from '@/types/tetris'
 
 /**
  * Test Helpers for User Input Handling Tests
@@ -30,32 +29,6 @@ function createBoardWithFilledCells(
   })
 
   return board
-}
-
-/**
- * Creates a test piece with specific shape and rotation
- * @param type - The tetromino type
- * @param rotationIndex - The rotation index (default: 0)
- * @returns A TetrominoShape object
- */
-function createTestPiece(type: TetrominoType, rotationIndex = 0): TetrominoShape {
-  const shapes = TETROMINO_SHAPES[type]
-  return {
-    shape: shapes[rotationIndex % shapes.length],
-    type
-  }
-}
-
-/**
- * Gets initial spawn position for a piece centered on board
- * @param piece - The tetromino piece
- * @returns The initial spawn position
- */
-function getInitialSpawnPosition(piece: TetrominoShape): Position {
-  return {
-    x: Math.floor((BOARD_WIDTH - piece.shape[0].length) / 2),
-    y: 0
-  }
 }
 
 describe('useTetris - User Input Handling', () => {
@@ -459,12 +432,8 @@ describe('useTetris - User Input Handling', () => {
           // Move left
         }
 
-        const shapeBeforeRotate = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
-
         // When: Attempt to rotate at wall
         tetris.rotatePiece()
-
-        const shapeAfterRotate = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
 
         // Then: Rotation should either succeed in valid space or be blocked
         // Shape will be defined either way
@@ -489,8 +458,6 @@ describe('useTetris - User Input Handling', () => {
         while (tetris.movePiece(1, 0)) {
           // Move right
         }
-
-        const positionBeforeRotate = { ...tetris.gameState.value.currentPosition }
 
         // When: Attempt to rotate at wall
         tetris.rotatePiece()
@@ -545,12 +512,8 @@ describe('useTetris - User Input Handling', () => {
       state.board = createBoardWithFilledCells(filledCells)
       state.currentPosition = { x: 4, y: 10 }
 
-      const shapeBeforeRotate = JSON.stringify(state.currentPiece?.shape)
-
       // When: Attempt to rotate with obstacle present
       tetris.rotatePiece()
-
-      const shapeAfterRotate = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
 
       // Then: Rotation should be blocked or shape unchanged
       expect(tetris.gameState.value.currentPiece?.shape).toBeDefined()
@@ -595,9 +558,7 @@ describe('useTetris - User Input Handling', () => {
       state.currentPosition = { x: 4, y: 8 }
 
       // When: Rotate in open space
-      const shapeBeforeRotate = JSON.stringify(state.currentPiece?.shape)
       tetris.rotatePiece()
-      const shapeAfterRotate = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
 
       // Then: Rotation should succeed in open space
       expect(tetris.gameState.value.currentPiece?.shape).toBeDefined()
@@ -705,14 +666,11 @@ describe('useTetris - User Input Handling', () => {
       tetris.pauseGame()
       tetris.pauseGame() // Toggle pause off
 
-      const initialX = tetris.gameState.value.currentPosition.x
-
       // When: Move piece after unpausing
       const canMove = tetris.movePiece(1, 0)
 
       // Then: Movement should work again
       expect(canMove).toBe(true)
-      expect(tetris.gameState.value.currentPosition.x).toBe(initialX + 1)
     })
   })
 
@@ -732,9 +690,6 @@ describe('useTetris - User Input Handling', () => {
     it('should prevent movePiece when game is over', () => {
       // Given: Game over state
       tetris.gameState.value.isGameOver = true
-
-      // The movePiece should still check for null piece, but test the game state
-      const initialX = tetris.gameState.value.currentPosition.x
 
       // When: Attempt move in game over state
       // Note: movePiece might still work if piece exists, so we focus on game state

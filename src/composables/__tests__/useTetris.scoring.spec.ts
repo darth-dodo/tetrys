@@ -14,7 +14,6 @@ describe('useTetris - Scoring System', () => {
     })
 
     it('should calculate correct score for single line (100 points base)', () => {
-      const { gameState } = useTetris()
 
       // Test the scoring algorithm directly
       // Single line at level 1: 100 * 1 = 100
@@ -31,7 +30,6 @@ describe('useTetris - Scoring System', () => {
     })
 
     it('should calculate correct score for double/2 lines (300 points base)', () => {
-      const { gameState } = useTetris()
 
       // Double line at level 1: 300 * 1 = 300
       const linesCleared = 2
@@ -51,7 +49,6 @@ describe('useTetris - Scoring System', () => {
     })
 
     it('should calculate correct score for triple/3 lines (500 points base)', () => {
-      const { gameState } = useTetris()
 
       // Triple line at level 1: 500 * 1 = 500
       const linesCleared = 3
@@ -71,7 +68,6 @@ describe('useTetris - Scoring System', () => {
     })
 
     it('should calculate correct score for Tetris/4 lines (800 points base)', () => {
-      const { gameState } = useTetris()
 
       // Tetris (4 lines) at level 1: 800 * 1 = 800
       const linesCleared = 4

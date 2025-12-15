@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useTetris } from '@/composables/useTetris'
-import { BOARD_WIDTH, BOARD_HEIGHT, TETROMINO_SHAPES } from '@/types/tetris'
+import { BOARD_WIDTH, BOARD_HEIGHT } from '@/types/tetris'
 import type { TetrominoType } from '@/types/tetris'
 import { triggerAnimationFrame } from '@/__tests__/setup'
 

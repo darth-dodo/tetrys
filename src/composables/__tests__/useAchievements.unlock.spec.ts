@@ -1035,12 +1035,10 @@ describe('useAchievements - Unlock Logic and Progression', () => {
 
       // Get the notification from checkAchievements (may unlock multiple)
       let notification = achievements.getNextNotification()
-      let unlockedCount = 1
 
       // Count how many notifications were generated (including level_5)
       while (notification && notification.id !== achievementId) {
         notification = achievements.getNextNotification()
-        unlockedCount++
       }
 
       // Then - Verify level_5 was unlocked

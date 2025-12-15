@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { useAchievements } from '../useAchievements'
 import { ACHIEVEMENTS } from '@/data/achievements'
 import type { AchievementId } from '@/types/achievements'
@@ -304,7 +304,6 @@ describe('useAchievements - Statistics and Tracking', () => {
       ]
 
       testCases.forEach(({ current, target, expectedPercent }) => {
-        const progress = achievements.getProgress('level_5', current)
         // Manually verify the calculation logic
         const percentage = Math.min((current / target) * 100, 100)
         expect(Math.round(percentage)).toBe(expectedPercent)
@@ -339,8 +338,6 @@ describe('useAchievements - Statistics and Tracking', () => {
     })
 
     it('should identify recent unlocks from achievement history', () => {
-      const now = new Date()
-
       achievements.unlockAchievement('level_2')
       achievements.unlockAchievement('level_3')
       achievements.unlockAchievement('level_4')
@@ -367,7 +364,6 @@ describe('useAchievements - Statistics and Tracking', () => {
       achievements.unlockAchievement('level_2')
 
       // Small delay to ensure different timestamps
-      const beforeTime = Date.now()
       achievements.unlockAchievement('level_3')
 
       const recent = achievements.stats.value.recentUnlocks
