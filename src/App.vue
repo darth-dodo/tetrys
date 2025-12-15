@@ -148,7 +148,7 @@ const { playSound, startMusic, pauseMusic, resumeMusic, isMusicEnabled } = useAu
 const { speedMultiplier, setSpeed } = useSpeed()
 
 // Use achievements system
-const { triggerDevAchievement } = useAchievements()
+const { checkAchievements, triggerDevAchievement } = useAchievements()
 
 // Use the Tetris game logic
 const {
@@ -166,6 +166,24 @@ const {
 watch(speedMultiplier, (newSpeed) => {
   setSpeedMultiplier(newSpeed)
 }, { immediate: true })
+
+// Watch for game state changes and check achievements
+watch(
+  [
+    () => gameState.value.score,
+    () => gameState.value.level,
+    () => gameState.value.lines
+  ],
+  () => {
+    if (gameState.value.isPlaying || gameState.value.isGameOver) {
+      checkAchievements({
+        score: gameState.value.score,
+        level: gameState.value.level,
+        lines: gameState.value.lines
+      })
+    }
+  }
+)
 
 // Audio system manages its own state - no interference needed
 

@@ -309,6 +309,8 @@ function checkAchievements(stats: {
 
 **Usage**: Call after game state changes (line clears, level ups, etc.)
 
+**Note**: In the actual game implementation, achievements are checked automatically via a watcher on game state changes. See "Production Usage" section below for the real-world pattern.
+
 **Example**:
 
 ```typescript
@@ -462,6 +464,41 @@ const { triggerDevAchievement } = useAchievements()
 triggerDevAchievement('legendary')
 triggerDevAchievement('epic')
 ```
+
+### Production Usage
+
+In the actual Tetrys game implementation (App.vue), achievements are checked automatically via a watcher that monitors key game state changes:
+
+```typescript
+const { checkAchievements, triggerDevAchievement } = useAchievements()
+const { gameState } = useTetris()
+
+// Watch for game state changes and check achievements automatically
+watch(
+  [
+    () => gameState.value.score,
+    () => gameState.value.level,
+    () => gameState.value.lines
+  ],
+  () => {
+    // Only check when game is active
+    if (gameState.value.isPlaying || gameState.value.isGameOver) {
+      checkAchievements({
+        score: gameState.value.score,
+        level: gameState.value.level,
+        lines: gameState.value.lines
+      })
+    }
+  }
+)
+```
+
+**Key Points**:
+- Achievements check automatically whenever score, level, or lines change
+- Only checks during active gameplay or at game over
+- No manual `checkAchievements()` calls needed in most code
+- `AchievementNotification` component automatically displays pending notifications
+- Development mode supports `triggerDevAchievement()` for testing (Ctrl/Cmd+Shift+A or console)
 
 ### Complete Usage Example
 
@@ -1996,22 +2033,38 @@ return {
 }
 ```
 
-#### Avoiding Watchers
+#### Using Watchers for Achievements
 
-Use event callbacks instead of watchers when possible:
+Achievement checking uses a reactive watcher pattern in production (see Production Usage section). This is appropriate because achievements depend on multiple game state changes:
 
 ```typescript
-// ✅ Better - direct event handling
+// ✅ Production pattern - watch multiple state changes
 const { checkAchievements } = useAchievements()
-onLineClear(() => {
-  checkAchievements({ lines: newLines })
-})
+const { gameState } = useTetris()
 
-// ❌ Less efficient - constant watching
-watch(() => gameState.value.lines, (newLines) => {
-  checkAchievements({ lines: newLines })
-})
+watch(
+  [
+    () => gameState.value.score,
+    () => gameState.value.level,
+    () => gameState.value.lines
+  ],
+  () => {
+    if (gameState.value.isPlaying || gameState.value.isGameOver) {
+      checkAchievements({
+        score: gameState.value.score,
+        level: gameState.value.level,
+        lines: gameState.value.lines
+      })
+    }
+  }
+)
 ```
+
+This approach is efficient because:
+- Checks are batched across multiple state properties
+- Only executes during active gameplay
+- Avoids redundant checks through Vue's watcher optimization
+- Maintains clean separation of concerns
 
 ---
 
