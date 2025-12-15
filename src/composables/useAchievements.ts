@@ -125,6 +125,55 @@ export function useAchievements() {
     saveAchievements()
   }
 
+  // Define progressive achievement dependencies
+  const getRequiredPredecessor = (achievementId: AchievementId): AchievementId | null => {
+    const progressionMap: Partial<Record<AchievementId, AchievementId>> = {
+      // Level progression
+      'level_3': 'level_2',
+      'level_4': 'level_3',
+      'level_5': 'level_4',
+      'level_6': 'level_5',
+      'level_7': 'level_6',
+      'level_8': 'level_7',
+      'level_9': 'level_8',
+      'level_10': 'level_9',
+      'level_11': 'level_10',
+      'level_12': 'level_11',
+      'level_13': 'level_12',
+      'level_14': 'level_13',
+      'level_15': 'level_14',
+      'level_16': 'level_15',
+      'level_17': 'level_16',
+      'level_18': 'level_17',
+      'level_19': 'level_18',
+      'level_20': 'level_19',
+      // Score progression
+      'score_500': 'score_100',
+      'score_1000': 'score_500',
+      'score_2500': 'score_1000',
+      'score_5000': 'score_2500',
+      'score_10000': 'score_5000',
+      'score_25000': 'score_10000',
+      'score_50000': 'score_25000',
+      'score_75000': 'score_50000',
+      // Line progression
+      'fifteen_lines': 'five_lines',
+      'forty_lines': 'fifteen_lines',
+      'fifty_lines': 'forty_lines',
+      'line_150': 'fifty_lines',
+      // Combo progression
+      'combo_3': 'combo_2',
+      'combo_4': 'combo_3',
+      'combo_king': 'combo_4',
+      'combo_6': 'combo_king',
+      'combo_7': 'combo_6',
+      'combo_8': 'combo_7',
+      'combo_10': 'combo_8'
+    }
+
+    return progressionMap[achievementId] || null
+  }
+
   // Check achievement conditions
   const checkAchievements = (stats: {
     score?: number
@@ -136,6 +185,12 @@ export function useAchievements() {
   }) => {
     ACHIEVEMENTS.forEach(achievement => {
       if (isUnlocked(achievement.id)) return
+
+      // Check if prerequisite achievement is required and unlocked
+      const prerequisite = getRequiredPredecessor(achievement.id)
+      if (prerequisite && !isUnlocked(prerequisite)) {
+        return // Cannot unlock this achievement until prerequisite is unlocked
+      }
 
       const { condition } = achievement
       let currentValue: number | undefined
