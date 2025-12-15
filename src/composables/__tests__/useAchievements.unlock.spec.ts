@@ -370,8 +370,10 @@ describe('useAchievements - Unlock Logic and Progression', () => {
       // Given
       const achievements = useAchievements()
 
-      // When
-      achievements.checkAchievements({ level: 5 })
+      // When - Call 4 times for progressive unlocking (level_2, 3, 4, 5)
+      for (let i = 0; i < 4; i++) {
+        achievements.checkAchievements({ level: 5 })
+      }
 
       // Then
       // Should unlock level_5 (gte 5)
@@ -382,8 +384,10 @@ describe('useAchievements - Unlock Logic and Progression', () => {
       // Given
       const achievements = useAchievements()
 
-      // When
-      achievements.checkAchievements({ level: 10 })
+      // When - Call multiple times for progressive unlocking (level_2 through level_10 = 9 calls)
+      for (let i = 0; i < 9; i++) {
+        achievements.checkAchievements({ level: 10 })
+      }
 
       // Then
       // All level achievements up to 10 should be unlocked
@@ -421,7 +425,8 @@ describe('useAchievements - Unlock Logic and Progression', () => {
       // Given
       const achievements = useAchievements()
 
-      // When
+      // When - Call twice for progressive unlocking (level_2, level_3)
+      achievements.checkAchievements({ level: 3 })
       achievements.checkAchievements({ level: 3 })
 
       // Then
@@ -1029,8 +1034,10 @@ describe('useAchievements - Unlock Logic and Progression', () => {
       const progress1 = achievements.getProgress(achievementId, 2)
       expect(progress1.percentage).toBe(40)
 
-      // Check achievements to unlock level_5
-      achievements.checkAchievements({ level: 5 })
+      // Check achievements to unlock level_5 - call 4 times for progressive unlocking
+      for (let i = 0; i < 4; i++) {
+        achievements.checkAchievements({ level: 5 })
+      }
       expect(achievements.isUnlocked(achievementId)).toBe(true)
 
       // Get the notification from checkAchievements (may unlock multiple)

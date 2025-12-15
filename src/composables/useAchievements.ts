@@ -183,12 +183,16 @@ export function useAchievements() {
     combo?: number
     timePlayed?: number
   }) => {
+    // Snapshot currently unlocked achievements to prevent cascade unlocking within same call
+    const unlockedSnapshot = new Set(unlockedAchievements.value.map(u => u.achievementId))
+
     ACHIEVEMENTS.forEach(achievement => {
       if (isUnlocked(achievement.id)) return
 
       // Check if prerequisite achievement is required and unlocked
+      // Use snapshot to prevent checking achievements unlocked during this same call
       const prerequisite = getRequiredPredecessor(achievement.id)
-      if (prerequisite && !isUnlocked(prerequisite)) {
+      if (prerequisite && !unlockedSnapshot.has(prerequisite)) {
         return // Cannot unlock this achievement until prerequisite is unlocked
       }
 
