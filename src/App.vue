@@ -23,8 +23,8 @@
           <AudioControls />
         </div>
         <div class="settings-section">
-          <SpeedControl 
-            :current-speed="speedMultiplier" 
+          <SpeedControl
+            :current-speed="speedMultiplier"
             @set-speed="setSpeed"
           />
         </div>
@@ -54,7 +54,7 @@
       <!-- Game Layout -->
       <div class="game-layout" v-if="gameState.isPlaying">
         <div class="game-area">
-          <GameBoard 
+          <GameBoard
             :game-state="gameState"
             @move-left="handleMove('left')"
             @move-right="handleMove('right')"
@@ -62,13 +62,13 @@
             @rotate="handleRotate"
             @drop="handleDrop"
           />
-          
+
           <div class="info-panel">
             <ScoreBoard :game-state="gameState" />
             <NextPiece :next-piece="gameState.nextPiece" />
           </div>
         </div>
-        
+
         <GameControls
           :game-state="gameState"
           @move-left="handleMove('left')"
@@ -90,7 +90,7 @@
             <h1 class="game-logo">TETRYS</h1>
             <div class="logo-subtitle">Classic Block Puzzle</div>
           </div>
-          
+
           <div class="game-preview">
             <div class="preview-grid">
               <div class="preview-block t-piece"></div>
@@ -99,7 +99,7 @@
               <div class="preview-block l-piece"></div>
             </div>
           </div>
-          
+
           <div class="start-actions">
             <button @click="startGame" class="start-button primary">
               ▶ START GAME
@@ -108,7 +108,7 @@
               ⚙ SETTINGS
             </button>
           </div>
-          
+
           <div class="controls-hint">
             <div class="mobile-controls">📱 Tap game board to rotate • Swipe to move • Use buttons to control</div>
             <div class="desktop-controls"><span class="key">←→↓</span> Move • <span class="key">↑</span> Rotate • <span class="key">ESC</span> Pause</div>
@@ -147,8 +147,8 @@ const { playSound, startMusic, pauseMusic, resumeMusic, isMusicEnabled } = useAu
 // Use speed system
 const { speedMultiplier, setSpeed } = useSpeed()
 
-// Use achievements system
-const { checkAchievements, triggerDevAchievement } = useAchievements()
+// Use achievements system - CACHED ONCE at component level
+const { checkAchievements, triggerDevAchievement, stats } = useAchievements()
 
 // Expose achievements functions for E2E testing
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
@@ -207,7 +207,7 @@ watch(
         const performProgressiveUnlock = () => {
           if (checksPerformed >= maxChecks) return
 
-          const { stats } = useAchievements()
+          // Use cached stats reference instead of calling useAchievements() repeatedly
           const currentUnlockedCount = stats.value.unlockedCount
 
           // If achievements were unlocked in the last check, check again
@@ -611,20 +611,20 @@ document.addEventListener('touchend', (e) => {
   animation: float 2s ease-in-out infinite;
 }
 
-.t-piece { 
-  background: var(--piece-t, #ff00ff); 
+.t-piece {
+  background: var(--piece-t, #ff00ff);
   animation-delay: 0s;
 }
-.i-piece { 
-  background: var(--piece-i, #00ffff); 
+.i-piece {
+  background: var(--piece-i, #00ffff);
   animation-delay: 0.5s;
 }
-.o-piece { 
-  background: var(--piece-o, #ffff00); 
+.o-piece {
+  background: var(--piece-o, #ffff00);
   animation-delay: 1s;
 }
-.l-piece { 
-  background: var(--piece-l, #ff8000); 
+.l-piece {
+  background: var(--piece-l, #ff8000);
   animation-delay: 1.5s;
 }
 
@@ -728,7 +728,7 @@ document.addEventListener('touchend', (e) => {
   .mobile-controls {
     display: none;
   }
-  
+
   .desktop-controls {
     display: block;
   }
@@ -739,7 +739,7 @@ document.addEventListener('touchend', (e) => {
   .desktop-controls {
     display: none !important;
   }
-  
+
   .mobile-controls {
     display: block !important;
   }
@@ -760,17 +760,17 @@ document.addEventListener('touchend', (e) => {
   .game-container {
     padding: 4px;
   }
-  
+
   .game-layout {
     gap: 8px;
     padding: 0 4px;
     min-height: calc(100vh - 70px);
   }
-  
+
   .game-area {
     gap: 6px;
   }
-  
+
   .info-panel {
     width: 100px;
     gap: 6px;
@@ -781,16 +781,16 @@ document.addEventListener('touchend', (e) => {
   .game-container {
     padding: 12px;
   }
-  
+
   .game-layout {
     gap: 16px;
     padding: 0 12px;
   }
-  
+
   .game-area {
     gap: 12px;
   }
-  
+
   .info-panel {
     width: 140px;
     gap: 10px;
@@ -802,14 +802,14 @@ document.addEventListener('touchend', (e) => {
     padding: 20px;
     min-height: calc(100vh - 100px);
   }
-  
+
   .game-layout {
     flex-direction: column;
     align-items: center;
     max-width: 600px;
     gap: 24px;
   }
-  
+
   .game-area {
     flex-direction: row;
     justify-content: center;
@@ -817,7 +817,7 @@ document.addEventListener('touchend', (e) => {
     gap: 30px;
     max-width: 600px;
   }
-  
+
   .info-panel {
     flex-direction: column;
     width: 180px;
@@ -830,34 +830,34 @@ document.addEventListener('touchend', (e) => {
   .header {
     padding: 10px;
   }
-  
+
   .title {
     font-size: 22px;
   }
-  
+
   .start-screen {
     padding: 15px 10px;
   }
-  
+
   .game-logo {
     font-size: 32px;
   }
-  
+
   .logo-subtitle {
     font-size: 12px;
   }
-  
+
   .start-button {
     padding: 12px 20px;
     font-size: 16px;
     min-width: 160px;
   }
-  
+
   .settings-button {
     padding: 8px 12px;
     font-size: 12px;
   }
-  
+
   .preview-block {
     width: 14px;
     height: 14px;
@@ -869,11 +869,11 @@ document.addEventListener('touchend', (e) => {
   .header {
     padding: 8px;
   }
-  
+
   .title {
     font-size: 18px;
   }
-  
+
   .game-logo {
     font-size: 28px;
   }
@@ -883,11 +883,11 @@ document.addEventListener('touchend', (e) => {
   .game-container {
     min-height: calc(100vh - 60px);
   }
-  
+
   .header {
     padding: 10px;
   }
-  
+
   .title {
     font-size: 20px;
   }
@@ -899,14 +899,14 @@ document.addEventListener('touchend', (e) => {
     padding: 4px;
     min-height: calc(100vh - 50px);
   }
-  
+
   .game-layout {
     flex-direction: row;
     gap: 10px;
     align-items: flex-start;
     padding: 0;
   }
-  
+
   .info-panel {
     flex-direction: column;
     width: auto;
@@ -915,11 +915,11 @@ document.addEventListener('touchend', (e) => {
     margin-bottom: 0;
     gap: 8px;
   }
-  
+
   .header {
     padding: 8px 15px;
   }
-  
+
   .title {
     font-size: 18px;
   }
@@ -931,7 +931,7 @@ document.addEventListener('touchend', (e) => {
     max-width: 100%;
     justify-content: space-around;
   }
-  
+
   .info-panel {
     width: 140px;
   }
