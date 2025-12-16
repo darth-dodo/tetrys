@@ -13,6 +13,10 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:ci": "vitest run --coverage --reporter=verbose",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "type-check": "vue-tsc --build --force"
   },
@@ -22,6 +26,7 @@
     "vue-tsc": "^2.0.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@rushstack/eslint-patch": "^1.8.0",
     "@testing-library/vue": "^8.1.0",
     "@tsconfig/node20": "^20.1.4",

@@ -120,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useTetris } from '@/composables/useTetris'
 import { useTheme } from '@/composables/useTheme'
 import { useAudio } from '@/composables/useAudio'
@@ -150,6 +150,11 @@ const { speedMultiplier, setSpeed } = useSpeed()
 // Use achievements system
 const { checkAchievements, triggerDevAchievement } = useAchievements()
 
+// Expose achievements functions for E2E testing
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+  ;(window as any).useAchievements = useAchievements
+}
+
 // Use the Tetris game logic
 const {
   gameState,
@@ -167,7 +172,11 @@ watch(speedMultiplier, (newSpeed) => {
   setSpeedMultiplier(newSpeed)
 }, { immediate: true })
 
-// Watch for game state changes and check achievements
+// Track last checked stats to prevent redundant achievement checks
+const lastCheckedStats = ref({ score: 0, level: 0, lines: 0 })
+
+// Watch for game state changes and check achievements progressively
+// Progressive unlocking: repeatedly check until no more achievements unlock
 watch(
   [
     () => gameState.value.score,
@@ -176,13 +185,51 @@ watch(
   ],
   () => {
     if (gameState.value.isPlaying || gameState.value.isGameOver) {
-      checkAchievements({
+      const currentStats = {
         score: gameState.value.score,
         level: gameState.value.level,
         lines: gameState.value.lines
-      })
+      }
+
+      // Only check achievements if any stat has actually changed
+      if (
+        currentStats.score !== lastCheckedStats.value.score ||
+        currentStats.level !== lastCheckedStats.value.level ||
+        currentStats.lines !== lastCheckedStats.value.lines
+      ) {
+        // Progressive unlocking: keep checking until no more achievements unlock
+        // This allows multiple progressive achievements to unlock from a single game event
+        // while preventing cascade effects within each individual check
+        const maxChecks = 10 // Safety limit to prevent infinite loops
+        let checksPerformed = 0
+        let previousUnlockedCount = 0
+
+        const performProgressiveUnlock = () => {
+          if (checksPerformed >= maxChecks) return
+
+          const { stats } = useAchievements()
+          const currentUnlockedCount = stats.value.unlockedCount
+
+          // If achievements were unlocked in the last check, check again
+          if (checksPerformed === 0 || currentUnlockedCount > previousUnlockedCount) {
+            checkAchievements(currentStats)
+            previousUnlockedCount = currentUnlockedCount
+            checksPerformed++
+
+            // Schedule next check to allow for progressive unlocking
+            // Use nextTick to allow the unlock to process
+            nextTick(() => {
+              performProgressiveUnlock()
+            })
+          }
+        }
+
+        performProgressiveUnlock()
+        lastCheckedStats.value = currentStats
+      }
     }
-  }
+  },
+  { flush: 'post' }
 )
 
 // Audio system manages its own state - no interference needed

@@ -569,10 +569,45 @@ checkAchievements(stats: {
 **Behavior:**
 - Iterates through all 74 achievements
 - Early exits for already unlocked (optimization)
-- Evaluates unlock conditions
-- Auto-unlocks on condition match
+- **Progressive unlocking**: Unlocks ONE achievement per call that has its prerequisite satisfied
+- Snapshot pattern prevents cascade unlocking within a single call
+- Evaluates unlock conditions with prerequisite checks
+- Auto-unlocks on condition match when prerequisites are met
 - Efficient single-pass check
 - Only needed props should be passed
+
+**Progressive Unlocking System:**
+
+Progressive achievements (e.g., level_2 → level_3 → level_4) require the previous achievement to be unlocked first. Each call to `checkAchievements()` unlocks **at most one** progressive achievement:
+
+```typescript
+// Example: Reaching level 5
+const achievements = useAchievements()
+
+// Call 1: Unlocks level_2 (prerequisite: none)
+achievements.checkAchievements({ level: 5 })
+expect(achievements.isUnlocked('level_2')).toBe(true)
+expect(achievements.isUnlocked('level_3')).toBe(false)
+
+// Call 2: Unlocks level_3 (prerequisite: level_2 ✓)
+achievements.checkAchievements({ level: 5 })
+expect(achievements.isUnlocked('level_3')).toBe(true)
+expect(achievements.isUnlocked('level_4')).toBe(false)
+
+// Call 3: Unlocks level_4 (prerequisite: level_3 ✓)
+achievements.checkAchievements({ level: 5 })
+expect(achievements.isUnlocked('level_4')).toBe(true)
+
+// Call 4: Unlocks level_5 (prerequisite: level_4 ✓)
+achievements.checkAchievements({ level: 5 })
+expect(achievements.isUnlocked('level_5')).toBe(true)
+```
+
+**Why Progressive Unlocking?**
+- Prevents achievement spam (multiple notifications at once)
+- Creates satisfying unlock cadence during gameplay
+- Maintains achievement progression sequence
+- Aligns with player expectations for milestone unlocking
 
 **Automatic Calling (Current Implementation):**
 
