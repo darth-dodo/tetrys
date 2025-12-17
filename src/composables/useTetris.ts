@@ -1,19 +1,23 @@
 import { ref, computed, onUnmounted } from 'vue'
-import type { 
-  GameState, 
-  TetrominoShape, 
-  TetrominoType, 
-  Position 
+import type {
+  GameState,
+  TetrominoShape,
+  TetrominoType,
+  Position
 } from '@/types/tetris'
-import { 
-  TETROMINO_SHAPES, 
-  BOARD_WIDTH, 
-  BOARD_HEIGHT, 
+import {
+  TETROMINO_SHAPES,
+  BOARD_WIDTH,
+  BOARD_HEIGHT,
   INITIAL_FALL_SPEED,
-  SPEED_INCREASE_PER_LEVEL 
+  SPEED_INCREASE_PER_LEVEL
 } from '@/types/tetris'
+import { useGameBus } from './useGameBus'
 
 export function useTetris() {
+  // Initialize game bus
+  const bus = useGameBus()
+
   // Game state
   const gameState = ref<GameState>({
     board: Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null)),
@@ -23,6 +27,9 @@ export function useTetris() {
     score: 0,
     level: 1,
     lines: 0,
+    tetrisCount: 0,
+    combo: 0,
+    timePlayed: 0,
     isGameOver: false,
     isPaused: false,
     isPlaying: false,
@@ -32,6 +39,10 @@ export function useTetris() {
   let gameLoop: number | null = null
   let lastTime = 0
   let currentRotation = 0
+  let gameStartTime = 0
+  let pausedTime = 0 // Accumulated time from previous play sessions
+  let pauseStartTime = 0 // When the current pause started
+  let timeTrackingInterval: number | null = null
 
   // Computed properties
   const fallSpeed = computed(() => {
@@ -44,7 +55,7 @@ export function useTetris() {
     const types: TetrominoType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
     const type = types[Math.floor(Math.random() * types.length)]
     const shapes = TETROMINO_SHAPES[type]
-    
+
     return {
       shape: shapes[0], // Start with first rotation
       type
@@ -190,6 +201,16 @@ export function useTetris() {
     if (!isValidPosition(gameState.value.board, gameState.value.currentPiece, gameState.value.currentPosition)) {
       gameState.value.isGameOver = true
       gameState.value.isPlaying = false
+      stopTimeTracking()
+
+      // Emit game over event
+      bus.emit('game:over', {
+        score: gameState.value.score,
+        level: gameState.value.level,
+        lines: gameState.value.lines,
+        tetrisCount: gameState.value.tetrisCount,
+        timePlayed: gameState.value.timePlayed
+      })
     }
   }
 
@@ -214,9 +235,43 @@ export function useTetris() {
           gameState.value.board = newBoard
 
           if (linesCleared > 0) {
+            const previousLevel = gameState.value.level
             gameState.value.lines += linesCleared
             gameState.value.score += calculateScore(linesCleared, gameState.value.level)
             gameState.value.level = Math.floor(gameState.value.lines / 10) + 1
+
+            // Track tetrisCount (4 lines cleared at once)
+            if (linesCleared === 4) {
+              gameState.value.tetrisCount++
+            }
+
+            // Track combo (consecutive line clears)
+            gameState.value.combo++
+
+            // Emit line clear events
+            bus.emit('lines:cleared', {
+              count: linesCleared,
+              totalLines: gameState.value.lines
+            })
+
+            bus.emit('score:updated', {
+              score: gameState.value.score,
+              pointsEarned: calculateScore(linesCleared, gameState.value.level)
+            })
+
+            if (gameState.value.level > previousLevel) {
+              bus.emit('level:up', {
+                level: gameState.value.level,
+                previousLevel
+              })
+            }
+
+            bus.emit('combo:updated', {
+              combo: gameState.value.combo
+            })
+          } else {
+            // Reset combo when no lines cleared
+            gameState.value.combo = 0
           }
 
           spawnNewPiece()
@@ -235,6 +290,39 @@ export function useTetris() {
     gameState.value.speedMultiplier = multiplier
   }
 
+  // Time tracking helper
+  const updateTimePlayed = (): void => {
+    if (gameState.value.isPlaying && !gameState.value.isPaused) {
+      // Calculate elapsed time excluding pause duration
+      const elapsedTime = Math.floor((Date.now() - gameStartTime - pausedTime) / 1000)
+      gameState.value.timePlayed = elapsedTime
+
+      // Emit time tick event
+      bus.emit('time:tick', { timePlayed: gameState.value.timePlayed })
+    }
+  }
+
+  const startTimeTracking = (): void => {
+    gameStartTime = Date.now()
+    pausedTime = 0
+    pauseStartTime = 0
+
+    if (timeTrackingInterval) {
+      clearInterval(timeTrackingInterval)
+    }
+
+    timeTrackingInterval = window.setInterval(() => {
+      updateTimePlayed()
+    }, 1000)
+  }
+
+  const stopTimeTracking = (): void => {
+    if (timeTrackingInterval) {
+      clearInterval(timeTrackingInterval)
+      timeTrackingInterval = null
+    }
+  }
+
   // Game controls
   const startGame = (): void => {
     const currentSpeed = gameState.value.speedMultiplier
@@ -246,38 +334,69 @@ export function useTetris() {
       score: 0,
       level: 1,
       lines: 0,
+      tetrisCount: 0,
+      combo: 0,
+      timePlayed: 0,
       isGameOver: false,
       isPaused: false,
       isPlaying: true,
       speedMultiplier: currentSpeed
     }
 
+    startTimeTracking()
     spawnNewPiece()
     gameLoop = requestAnimationFrame(update)
+
+    // Emit game started event
+    bus.emit('game:started', { timestamp: Date.now() })
   }
 
   const pauseGame = (): void => {
+    const wasPaused = gameState.value.isPaused
     gameState.value.isPaused = !gameState.value.isPaused
-    
+
     if (gameState.value.isPaused) {
-      // Pause: Cancel the current game loop
+      // Starting pause: record when pause started
+      pauseStartTime = Date.now()
+
+      // Cancel the current game loop
       if (gameLoop) {
         cancelAnimationFrame(gameLoop)
         gameLoop = null
       }
     } else if (gameState.value.isPlaying) {
-      // Resume: Start a new game loop
+      // Resuming: accumulate the pause duration
+      if (pauseStartTime > 0) {
+        pausedTime += Date.now() - pauseStartTime
+        pauseStartTime = 0
+      }
+
+      // Update time played immediately after resume
+      updateTimePlayed()
+
+      // Resume: start a new game loop
       gameLoop = requestAnimationFrame(update)
     }
+
+    // Emit pause event
+    bus.emit('game:paused', {
+      isPaused: gameState.value.isPaused,
+      timePlayed: gameState.value.timePlayed
+    })
   }
 
   const resetGame = (): void => {
     if (gameLoop) {
       cancelAnimationFrame(gameLoop)
     }
+    stopTimeTracking()
     gameState.value.isPlaying = false
     gameState.value.isGameOver = false
     gameState.value.isPaused = false
+    gameState.value.timePlayed = 0
+    pausedTime = 0
+    pauseStartTime = 0
+    gameStartTime = 0
   }
 
   // Cleanup
@@ -285,6 +404,7 @@ export function useTetris() {
     if (gameLoop) {
       cancelAnimationFrame(gameLoop)
     }
+    stopTimeTracking()
   })
 
   return {

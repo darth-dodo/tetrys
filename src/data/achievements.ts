@@ -610,7 +610,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Clear 50 lines in under 3 minutes',
     icon: '⌚',
     category: 'skill',
-    condition: { type: 'time_played', value: 180, operator: 'lte' },
+    condition: { type: 'lines', value: 50, operator: 'gte' },
+    additionalConditions: [{ type: 'time_played', value: 180, operator: 'lte' }],
     rarity: 'epic',
     rewardMessage: 'Lightning fast! Your speed is extraordinary!'
   },
@@ -639,124 +640,14 @@ export const ACHIEVEMENTS: Achievement[] = [
   // SPECIAL & FUN ACHIEVEMENTS
   // ========================================
   {
-    id: 'night_owl',
-    name: 'Night Owl',
-    description: 'Play after midnight',
-    icon: '🦉',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'common',
-    rewardMessage: 'Playing late? That\'s dedication!'
-  },
-  {
-    id: 'early_bird',
-    name: 'Early Bird',
-    description: 'Play before 6 AM',
-    icon: '🐦',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'common',
-    rewardMessage: 'Early bird gets the Tetris!'
-  },
-  {
-    id: 'practice_makes_perfect',
-    name: 'Practice Makes Perfect',
-    description: 'Play 10 games',
-    icon: '🎮',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'common',
-    rewardMessage: 'Ten games played! You\'re dedicated!'
-  },
-  {
-    id: 'persistent',
-    name: 'Persistent Player',
-    description: 'Play 25 games',
-    icon: '🏃‍♂️',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'rare',
-    rewardMessage: 'Twenty-five games! You never give up!'
-  },
-  {
-    id: 'dedicated',
-    name: 'Dedicated Gamer',
-    description: 'Play 50 games',
-    icon: '🎯',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'epic',
-    rewardMessage: 'Fifty games! True dedication!'
-  },
-  {
-    id: 'obsessed',
-    name: 'Tetris Obsessed',
-    description: 'Play 100 games',
-    icon: '🤯',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'legendary',
-    rewardMessage: 'One hundred games! You might have a problem... we love it!'
-  },
-  {
-    id: 'theme_explorer',
-    name: 'Theme Explorer',
-    description: 'Try 3 different themes',
-    icon: '🎨',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'common',
-    rewardMessage: 'Exploring the themes! Find your favorite!'
-  },
-  {
-    id: 'audio_enthusiast',
-    name: 'Audio Enthusiast',
-    description: 'Enable game music',
-    icon: '🎵',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'common',
-    rewardMessage: 'Music makes everything better!'
-  },
-  {
-    id: 'speed_lover',
-    name: 'Speed Lover',
-    description: 'Play with 2x speed multiplier',
-    icon: '⚡',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'rare',
-    rewardMessage: 'You love the speed! Adrenaline junkie!'
-  },
-  {
     id: 'comeback_kid',
     name: 'Comeback Kid',
-    description: 'Survive near-death situation',
+    description: 'Reach level 5',
     icon: '💪',
     category: 'special',
     condition: { type: 'level', value: 5, operator: 'gte' },
     rarity: 'rare',
-    rewardMessage: 'That was close! Great recovery!'
-  },
-  {
-    id: 'zen_master',
-    name: 'Zen Master',
-    description: 'Play 5 games without pausing',
-    icon: '🧘',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'rare',
-    rewardMessage: 'Focus and flow! You\'re in the zone!'
-  },
-  {
-    id: 'weekend_warrior',
-    name: 'Weekend Warrior',
-    description: 'Play on Saturday or Sunday',
-    icon: '🎉',
-    category: 'special',
-    condition: { type: 'level', value: 1, operator: 'gte' },
-    rarity: 'common',
-    rewardMessage: 'Making the most of your weekend!'
+    rewardMessage: 'Keep pushing forward!'
   }
 ]
 

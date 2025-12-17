@@ -1,5 +1,12 @@
 <template>
   <div class="app">
+    <!-- Save Error Warning Banner -->
+    <div v-if="saveError" class="save-error-banner" role="alert" aria-live="polite">
+      <span class="error-icon">⚠️</span>
+      <span class="error-message">{{ saveError }}</span>
+      <button class="error-dismiss" @click="clearSaveError" aria-label="Dismiss error">✕</button>
+    </div>
+
     <!-- Achievement Notification Overlay -->
     <AchievementNotification />
 
@@ -120,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useTetris } from '@/composables/useTetris'
 import { useTheme } from '@/composables/useTheme'
 import { useAudio } from '@/composables/useAudio'
@@ -148,7 +155,7 @@ const { playSound, startMusic, pauseMusic, resumeMusic, isMusicEnabled } = useAu
 const { speedMultiplier, setSpeed } = useSpeed()
 
 // Use achievements system - CACHED ONCE at component level
-const { checkAchievements, triggerDevAchievement, stats } = useAchievements()
+const { triggerDevAchievement, saveError, clearSaveError } = useAchievements()
 
 // Expose achievements functions for E2E testing
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
@@ -171,66 +178,6 @@ const {
 watch(speedMultiplier, (newSpeed) => {
   setSpeedMultiplier(newSpeed)
 }, { immediate: true })
-
-// Track last checked stats to prevent redundant achievement checks
-const lastCheckedStats = ref({ score: 0, level: 0, lines: 0 })
-
-// Watch for game state changes and check achievements progressively
-// Progressive unlocking: repeatedly check until no more achievements unlock
-watch(
-  [
-    () => gameState.value.score,
-    () => gameState.value.level,
-    () => gameState.value.lines
-  ],
-  () => {
-    if (gameState.value.isPlaying || gameState.value.isGameOver) {
-      const currentStats = {
-        score: gameState.value.score,
-        level: gameState.value.level,
-        lines: gameState.value.lines
-      }
-
-      // Only check achievements if any stat has actually changed
-      if (
-        currentStats.score !== lastCheckedStats.value.score ||
-        currentStats.level !== lastCheckedStats.value.level ||
-        currentStats.lines !== lastCheckedStats.value.lines
-      ) {
-        // Progressive unlocking: keep checking until no more achievements unlock
-        // This allows multiple progressive achievements to unlock from a single game event
-        // while preventing cascade effects within each individual check
-        const maxChecks = 10 // Safety limit to prevent infinite loops
-        let checksPerformed = 0
-        let previousUnlockedCount = 0
-
-        const performProgressiveUnlock = () => {
-          if (checksPerformed >= maxChecks) return
-
-          // Use cached stats reference instead of calling useAchievements() repeatedly
-          const currentUnlockedCount = stats.value.unlockedCount
-
-          // If achievements were unlocked in the last check, check again
-          if (checksPerformed === 0 || currentUnlockedCount > previousUnlockedCount) {
-            checkAchievements(currentStats)
-            previousUnlockedCount = currentUnlockedCount
-            checksPerformed++
-
-            // Schedule next check to allow for progressive unlocking
-            // Use nextTick to allow the unlock to process
-            nextTick(() => {
-              performProgressiveUnlock()
-            })
-          }
-        }
-
-        performProgressiveUnlock()
-        lastCheckedStats.value = currentStats
-      }
-    }
-  },
-  { flush: 'post' }
-)
 
 // Audio system manages its own state - no interference needed
 
@@ -354,6 +301,58 @@ document.addEventListener('touchend', (e) => {
   min-height: 100vh;
   font-family: monospace;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Save Error Banner */
+.save-error-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  background: rgba(255, 59, 48, 0.95);
+  color: white;
+  padding: 12px 48px 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: monospace;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.error-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.error-message {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.error-dismiss {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.error-dismiss:hover {
+  opacity: 1;
+}
+
+.error-dismiss:focus {
+  outline: 2px solid white;
+  outline-offset: 2px;
 }
 
 .header {

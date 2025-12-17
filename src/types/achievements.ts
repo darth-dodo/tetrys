@@ -1,5 +1,4 @@
 export type AchievementId =
-  | 'audio_enthusiast'
   | 'centurion'
   | 'combo_10'
   | 'combo_2'
@@ -10,8 +9,6 @@ export type AchievementId =
   | 'combo_8'
   | 'combo_king'
   | 'comeback_kid'
-  | 'dedicated'
-  | 'early_bird'
   | 'fifteen_lines'
   | 'fifty_lines'
   | 'first_blood'
@@ -36,17 +33,11 @@ export type AchievementId =
   | 'level_7'
   | 'level_8'
   | 'level_9'
-  | 'level_ten'
-  | 'level_twenty'
   | 'line_150'
   | 'line_clearer'
   | 'line_destroyer'
   | 'marathon_runner'
-  | 'night_owl'
-  | 'obsessed'
   | 'perfect_start'
-  | 'persistent'
-  | 'practice_makes_perfect'
   | 'quick_fingers'
   | 'score_100'
   | 'score_1000'
@@ -58,8 +49,6 @@ export type AchievementId =
   | 'score_50000'
   | 'score_75000'
   | 'seventy_five_lines'
-  | 'speed_demon'
-  | 'speed_lover'
   | 'ten_lines'
   | 'tetris_15'
   | 'tetris_2'
@@ -68,15 +57,18 @@ export type AchievementId =
   | 'tetris_7'
   | 'tetris_master'
   | 'tetris_novice'
-  | 'theme_explorer'
   | 'thirty_lines'
   | 'twenty_lines'
   | 'unstoppable'
-  | 'weekend_warrior'
   | 'welcome'
-  | 'zen_master'
 
 export type AchievementCategory = 'gameplay' | 'scoring' | 'progression' | 'skill' | 'special'
+
+export interface AchievementCondition {
+  type: 'lines' | 'score' | 'level' | 'tetris_count' | 'combo' | 'games_played' | 'time_played'
+  value: number
+  operator: 'gte' | 'lte' | 'eq'
+}
 
 export interface Achievement {
   id: AchievementId
@@ -84,23 +76,25 @@ export interface Achievement {
   description: string
   icon: string
   category: AchievementCategory
-  condition: {
-    type: 'lines' | 'score' | 'level' | 'tetris_count' | 'combo' | 'games_played' | 'time_played'
-    value: number
-    operator: 'gte' | 'lte' | 'eq'
-  }
+  condition: AchievementCondition
+  additionalConditions?: AchievementCondition[]
   rarity: 'common' | 'rare' | 'epic' | 'legendary'
   rewardMessage?: string
+}
+
+export interface GameStats {
+  score: number
+  level: number
+  lines: number
+  tetrisCount?: number
+  combo?: number
+  timePlayed?: number
 }
 
 export interface UnlockedAchievement {
   achievementId: AchievementId
   unlockedAt: Date
-  gameStats?: {
-    score: number
-    level: number
-    lines: number
-  }
+  gameStats?: GameStats
 }
 
 export interface AchievementProgress {

@@ -3,6 +3,36 @@ import { useAchievements } from '../useAchievements'
 import { ACHIEVEMENTS } from '@/data/achievements'
 import type { AchievementId } from '@/types/achievements'
 
+/**
+ * Test Suite: useAchievements - Statistics and Tracking
+ *
+ * EVENT-DRIVEN ARCHITECTURE OVERVIEW:
+ * ====================================
+ * useAchievements now operates as an event-driven system using mitt (event bus):
+ *
+ * INCOMING EVENTS (subscribed via eventBus.on):
+ * - 'lines:cleared' → Updates internal linesCleared stat, triggers unlock check
+ * - 'score:updated' → Updates internal score stat, triggers unlock check
+ * - 'combo:updated' → Updates internal maxCombo stat, triggers unlock check
+ * - 'time:tick' → Updates internal timePlayed stat, triggers unlock check
+ * - 'game:started' → Resets all internal stats to zero for new game
+ *
+ * OUTGOING EVENTS (emitted via eventBus.emit):
+ * - 'achievement:unlocked' → { id, rarity, timestamp } when achievement is unlocked
+ *
+ * STATS TRACKING MODEL:
+ * - Internal stats updated automatically via event subscriptions
+ * - Stats accumulate during gameplay, reset on 'game:started'
+ * - updateSessionStats() method exists for backward compatibility
+ * - Progressive unlock checking happens automatically when stats change
+ *
+ * TESTING NOTES FOR THIS FILE:
+ * - These tests verify statistics tracking and computation
+ * - Uses updateSessionStats() for direct stat manipulation in tests
+ * - Event-driven stat updates tested in useAchievements.integration.spec.ts
+ * - Relevant events: All game events (lines, score, combo, time, game:started)
+ */
+
 describe('useAchievements - Statistics and Tracking', () => {
   let achievements: ReturnType<typeof useAchievements>
 
@@ -21,8 +51,11 @@ describe('useAchievements - Statistics and Tracking', () => {
 
   describe('Track game statistics', () => {
     it('should initialize with default session stats', () => {
+      // Given: Fresh achievement instance
+      // EVENT-DRIVEN: Stats reset to zero on 'game:started' event
       const stats = achievements.sessionStats.value
 
+      // Then: All stats should be at initial values
       expect(stats).toEqual({
         linesCleared: 0,
         tetrisCount: 0,
@@ -34,8 +67,12 @@ describe('useAchievements - Statistics and Tracking', () => {
     })
 
     it('should track lines cleared in session', () => {
+      // Given: Initial state
+      // When: Update stats (simulates 'lines:cleared' event handling)
+      // EVENT-DRIVEN: In real gameplay, 'lines:cleared' event triggers this update
       achievements.updateSessionStats({ linesCleared: 10 })
 
+      // Then: Stats reflect the update
       expect(achievements.sessionStats.value.linesCleared).toBe(10)
     })
 
@@ -84,14 +121,15 @@ describe('useAchievements - Statistics and Tracking', () => {
       expect(stats.timePlayed).toBe(1800)
     })
 
-    it('should persist stats to localStorage after update', () => {
+    it('should NOT persist stats to localStorage (reserved for future use)', () => {
       achievements.updateSessionStats({ linesCleared: 25 })
 
+      // sessionStats is NOT persisted (see comment in useAchievements.ts)
       const stored = localStorage.getItem('tetris_achievement_stats')
-      expect(stored).toBeTruthy()
+      expect(stored).toBeNull()
 
-      const parsed = JSON.parse(stored!)
-      expect(parsed.linesCleared).toBe(25)
+      // But the in-memory value is updated
+      expect(achievements.sessionStats.value.linesCleared).toBe(25)
     })
 
     it('should accumulate stats across multiple updates', () => {
@@ -206,19 +244,19 @@ describe('useAchievements - Statistics and Tracking', () => {
     })
 
     it('should verify total achievements count', () => {
-      expect(ACHIEVEMENTS.length).toBe(73)
+      expect(ACHIEVEMENTS.length).toBe(62)
     })
 
     it('should round percentage correctly', () => {
-      // Unlock 18 out of 73 achievements
+      // Unlock 18 out of 62 achievements
       for (let i = 0; i < 18; i++) {
         const achievement = ACHIEVEMENTS[i]
         achievements.unlockAchievement(achievement.id as AchievementId)
       }
 
       const percentage = achievements.stats.value.percentage
-      // 18/73 * 100 = 24.657... rounds to 25
-      expect(percentage).toBe(25)
+      // 18/62 * 100 = 29.03... rounds to 29
+      expect(percentage).toBe(29)
     })
 
     it('should reflect locked achievements count', () => {
@@ -524,7 +562,7 @@ describe('useAchievements - Statistics and Tracking', () => {
 
       // Verify stats snapshot
       const stats = achievements.stats.value
-      expect(stats.totalAchievements).toBe(73)
+      expect(stats.totalAchievements).toBe(62)
     })
 
     it('should preserve achievement data across composable instances', () => {

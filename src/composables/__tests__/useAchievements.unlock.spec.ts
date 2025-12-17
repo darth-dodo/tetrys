@@ -5,6 +5,31 @@ import type { AchievementId } from '@/types/achievements'
 /**
  * Test Suite: useAchievements Unlock Logic and Progression
  *
+ * EVENT-DRIVEN ARCHITECTURE OVERVIEW:
+ * ====================================
+ * useAchievements now operates as an event-driven system using mitt (event bus):
+ *
+ * INCOMING EVENTS (subscribed via eventBus.on):
+ * - 'lines:cleared' → Updates internal linesCleared stat, triggers unlock check
+ * - 'score:updated' → Updates internal score stat, triggers unlock check
+ * - 'combo:updated' → Updates internal maxCombo stat, triggers unlock check
+ * - 'time:tick' → Updates internal timePlayed stat, triggers unlock check
+ * - 'game:started' → Resets all internal stats to zero for new game
+ *
+ * OUTGOING EVENTS (emitted via eventBus.emit):
+ * - 'achievement:unlocked' → { id, rarity, timestamp } when achievement is unlocked
+ *
+ * INTERNAL STATE MANAGEMENT:
+ * - Stats tracking is event-driven and automatic (no manual checkAchievements calls)
+ * - Progressive unlock checking happens automatically when stats are updated
+ * - State resets on 'game:started' event for clean game sessions
+ *
+ * TESTING NOTES FOR THIS FILE:
+ * - These tests focus on the unlock mechanism itself (unlockAchievement method)
+ * - Direct unlock calls bypass event system (used for manual/forced unlocks)
+ * - Event-driven unlocks are tested in useAchievements.integration.spec.ts
+ * - Relevant events: None directly tested here (manual unlock testing only)
+ *
  * Comprehensive tests for achievement unlock mechanics, progress tracking,
  * and duplicate prevention including:
  * - Unlock achievement by ID
@@ -352,17 +377,23 @@ describe('useAchievements - Unlock Logic and Progression', () => {
    * Given: An achievement's condition is met (progress reaches 100%)
    * When: checkAchievements is called
    * Then: Achievement should be automatically unlocked
+   *
+   * EVENT-DRIVEN BEHAVIOR:
+   * In real gameplay, stats reach threshold via accumulated events:
+   * - Multiple 'lines:cleared' events → linesCleared stat increases
+   * - When condition met → automatic unlock check → 'achievement:unlocked' emitted
    */
   describe('5. Trigger achievement unlock at 100% progress', () => {
     it('should unlock achievement when condition is met via checkAchievements', () => {
-      // Given
+      // Given: Clean achievement state
       const achievements = useAchievements()
       const levelTarget = 2
 
-      // When
+      // When: Game state meets achievement condition
+      // EVENT-DRIVEN: Simulates accumulated 'score:updated' events reaching level 2
       achievements.checkAchievements({ level: levelTarget })
 
-      // Then
+      // Then: Achievement unlocked and 'achievement:unlocked' event emitted
       expect(achievements.isUnlocked('level_2')).toBe(true)
     })
 

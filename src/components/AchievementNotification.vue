@@ -1,11 +1,15 @@
 <template>
   <Transition name="achievement-slide">
-    <div 
+    <div
       v-if="visible && currentAchievement"
       class="achievement-notification"
       role="alert"
       aria-live="polite"
+      aria-atomic="true"
+      :aria-label="`Achievement unlocked: ${currentAchievement.name}`"
+      tabindex="0"
       :class="`rarity-${currentAchievement.rarity}`"
+      @keydown.esc="dismissNotification"
     >
       <div class="achievement-content">
         <div class="achievement-icon">{{ currentAchievement.icon }}</div>
@@ -26,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAchievements } from '../composables/useAchievements'
 import type { Achievement } from '../types/achievements'
 
@@ -34,7 +38,22 @@ const { getNextNotification, pendingNotifications } = useAchievements()
 
 const visible = ref(false)
 const currentAchievement = ref<Achievement | null>(null)
+const prefersReducedMotion = ref(false)
 const DISPLAY_DURATION = 4000 // 4 seconds
+
+// Timeout tracking for cleanup
+let displayTimeout: ReturnType<typeof setTimeout> | null = null
+let transitionTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Dismiss current notification
+const dismissNotification = () => {
+  if (displayTimeout) clearTimeout(displayTimeout)
+  if (transitionTimeout) clearTimeout(transitionTimeout)
+
+  visible.value = false
+  const transitionTime = prefersReducedMotion.value ? 0 : 300
+  transitionTimeout = setTimeout(showNext, transitionTime)
+}
 
 // Show next achievement notification
 const showNext = () => {
@@ -49,10 +68,11 @@ const showNext = () => {
   visible.value = true
 
   // Auto-hide after duration
-  setTimeout(() => {
+  displayTimeout = setTimeout(() => {
     visible.value = false
     // Show next after transition completes
-    setTimeout(showNext, 300)
+    const transitionTime = prefersReducedMotion.value ? 0 : 300
+    transitionTimeout = setTimeout(showNext, transitionTime)
   }, DISPLAY_DURATION)
 }
 
@@ -67,9 +87,23 @@ watch(
 )
 
 onMounted(() => {
+  // Set up reduced motion detection
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+  prefersReducedMotion.value = mediaQuery.matches
+
+  mediaQuery.addEventListener('change', (e) => {
+    prefersReducedMotion.value = e.matches
+  })
+
+  // Start showing notifications
   if (pendingNotifications.value.length > 0) {
     showNext()
   }
+})
+
+onUnmounted(() => {
+  if (displayTimeout) clearTimeout(displayTimeout)
+  if (transitionTimeout) clearTimeout(transitionTimeout)
 })
 </script>
 
@@ -261,6 +295,51 @@ onMounted(() => {
   }
   50% { 
     border-color: #fbbf24;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .achievement-notification {
+    animation: none;
+  }
+
+  .achievement-icon {
+    animation: none;
+  }
+
+  .achievement-slide-enter-active,
+  .achievement-slide-leave-active {
+    animation: none;
+    transition: opacity 0.1s ease;
+  }
+
+  .achievement-slide-enter-active {
+    opacity: 0;
+  }
+
+  .achievement-slide-leave-active {
+    opacity: 1;
+  }
+
+  .progress-fill {
+    animation: progress-countdown 4s linear forwards;
+  }
+
+  .rarity-legendary {
+    animation: none;
+  }
+
+  @keyframes legendary-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+  }
+
+  @keyframes legendary-border {
+    0%, 100% {
+      border-color: #f59e0b;
+    }
   }
 }
 

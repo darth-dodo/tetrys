@@ -150,6 +150,53 @@ tetrys/
 └── tests/                   # Test suites
 ```
 
+## 🔌 Event-Driven Architecture
+
+Tetrys uses an event-driven architecture with **mitt** as the event bus for decoupled communication between game logic and the achievement system.
+
+### Event System Overview
+The game uses a centralized event bus (`useGameBus()`) that enables components and composables to communicate without tight coupling. This promotes testability, maintainability, and extensibility.
+
+### Available Events
+
+**Game Events:**
+- `game:started` - Fired when a new game begins
+- `game:paused` - Fired when game is paused
+- `game:over` - Fired when game ends
+- `game:reset` - Fired when game is reset
+
+**Gameplay Events:**
+- `lines:cleared` - Payload: `{ count: number }` - Lines cleared in single action
+- `score:updated` - Payload: `{ score: number }` - Current score value
+- `level:up` - Payload: `{ level: number }` - New level reached
+- `combo:updated` - Payload: `{ combo: number }` - Current combo count
+- `time:tick` - Payload: `{ timeElapsed: number }` - Game time in seconds
+
+**Achievement Events:**
+- `achievement:unlocked` - Payload: `{ achievement: Achievement }` - New achievement unlocked
+
+### How to Subscribe
+
+```typescript
+import { useGameBus } from '@/composables/useGameBus'
+
+const gameBus = useGameBus()
+
+// Subscribe to an event
+gameBus.on('lines:cleared', (data) => {
+  console.log(`Cleared ${data.count} lines!`)
+})
+
+// Emit an event
+gameBus.emit('score:updated', { score: 1000 })
+```
+
+### Benefits
+- **Decoupling**: Game logic and achievements don't directly depend on each other
+- **Testability**: Easy to mock events in unit tests
+- **Extensibility**: Add new listeners without modifying existing code
+- **Type Safety**: TypeScript ensures event payload type correctness
+
 ## 🧪 Testing
 
 ```bash

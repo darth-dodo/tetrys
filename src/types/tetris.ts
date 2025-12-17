@@ -18,6 +18,9 @@ export interface GameState {
   score: number
   level: number
   lines: number
+  tetrisCount: number
+  combo: number
+  timePlayed: number
   isGameOver: boolean
   isPaused: boolean
   isPlaying: boolean

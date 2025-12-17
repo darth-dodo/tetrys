@@ -7,6 +7,57 @@ import {
 import type { TetrominoType } from '@/types/tetris'
 
 /**
+ * Test Suite: useTetris User Input Handling
+ *
+ * =============================================================================
+ * EVENT-DRIVEN ARCHITECTURE
+ * =============================================================================
+ *
+ * The useTetris composable emits events in response to user input actions,
+ * enabling audio feedback, visual effects, and achievement tracking.
+ *
+ * EVENTS RELEVANT TO THIS TEST FILE:
+ *
+ * User Input Events (Indirect):
+ *   While user inputs (movePiece, rotatePiece, dropPiece) don't emit dedicated
+ *   input events, they trigger other events based on outcomes:
+ *
+ *   Movement Success:
+ *     - No specific event (silent operation for performance)
+ *     - Audio feedback handled by UI layer detecting position changes
+ *
+ *   Piece Locking (after movement completes):
+ *     - lines:cleared { count, isTetris, newTotal, newLevel } (if lines formed)
+ *     - score:updated { score, delta, level } (if points earned)
+ *     - level:up { level, previousLevel } (if level threshold reached)
+ *     - game:over (if piece can't spawn after lock)
+ *
+ *   Hard Drop:
+ *     - Triggers immediate piece lock
+ *     - May emit lines:cleared, score:updated based on lock outcome
+ *     - Audio system plays distinct "hard drop" sound
+ *
+ * Event Flow for User Input:
+ *   1. User Input (keyboard/touch) → Input Handler
+ *   2. Validate Game State (not paused, not game over)
+ *   3. Execute Movement/Rotation/Drop → Update piece position
+ *   4. If piece locks → Check for line clears → Emit relevant events
+ *   5. Audio/Visual subscribers → Respond to events (sounds, animations)
+ *
+ * Input Gating:
+ *   - All inputs blocked when isPaused === true (emit no events)
+ *   - All inputs blocked when isGameOver === true (emit no events)
+ *   - Movement blocked by boundary/collision detection (silent failure)
+ *   - Rotation blocked by wall/piece collision (silent failure)
+ *
+ * Important Notes:
+ *   - Input handling is synchronous for responsive feel
+ *   - Failed movements/rotations don't emit events (silent rejection)
+ *   - Successful piece locks trigger cascading event emissions
+ *   - Hard drop is special case: always locks immediately, triggers events
+ */
+
+/**
  * Test Helpers for User Input Handling Tests
  */
 
@@ -46,6 +97,8 @@ describe('useTetris - User Input Handling', () => {
 
       // When: Move piece left
       const canMoveLeft = tetris.movePiece(-1, 0)
+      // NOTE: No event emitted for simple movement (performance optimization)
+      // Audio feedback handled by UI detecting position change
 
       // Then: Movement should succeed and position should decrease by 1
       expect(canMoveLeft).toBe(true)
@@ -571,8 +624,11 @@ describe('useTetris - User Input Handling', () => {
       const initialY = tetris.gameState.value.currentPosition.y
       expect(initialY).toBe(0)
 
-      // When: Drop piece
+      // When: Drop piece (hard drop)
       tetris.dropPiece()
+      // EVENT: Piece locks immediately after drop
+      // EVENTS: May emit lines:cleared, score:updated if lines formed
+      // AUDIO: Special hard drop sound effect plays
 
       // Then: Piece should be near or at bottom
       const finalY = tetris.gameState.value.currentPosition.y
@@ -627,9 +683,11 @@ describe('useTetris - User Input Handling', () => {
       // Given: Game paused
       const initialX = tetris.gameState.value.currentPosition.x
       tetris.pauseGame()
+      // EVENT: game:paused emitted, input gating enabled
 
       // When: Attempt to move piece while paused
       const canMove = tetris.movePiece(-1, 0)
+      // NO EVENT: Input blocked, no events emitted during pause
 
       // Then: Move should be rejected and position unchanged
       expect(canMove).toBe(false)
@@ -640,9 +698,11 @@ describe('useTetris - User Input Handling', () => {
       // Given: Game paused
       const shapeBeforePause = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
       tetris.pauseGame()
+      // EVENT: game:paused emitted
 
       // When: Attempt to rotate piece while paused
       tetris.rotatePiece()
+      // NO EVENT: Rotation blocked by pause state, no events emitted
 
       // Then: Rotation should be ignored
       const shapeAfterRotate = JSON.stringify(tetris.gameState.value.currentPiece?.shape)

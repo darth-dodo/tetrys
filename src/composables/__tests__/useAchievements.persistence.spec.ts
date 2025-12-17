@@ -7,6 +7,33 @@ import type { UnlockedAchievement } from '@/types/achievements'
 
 /**
  * Test suite for useAchievements localStorage persistence
+ *
+ * EVENT-DRIVEN ARCHITECTURE OVERVIEW:
+ * ====================================
+ * useAchievements now operates as an event-driven system using mitt (event bus):
+ *
+ * INCOMING EVENTS (subscribed via eventBus.on):
+ * - 'lines:cleared' → Updates internal linesCleared stat, triggers unlock check
+ * - 'score:updated' → Updates internal score stat, triggers unlock check
+ * - 'combo:updated' → Updates internal maxCombo stat, triggers unlock check
+ * - 'time:tick' → Updates internal timePlayed stat, triggers unlock check
+ * - 'game:started' → Resets all internal stats to zero for new game
+ *
+ * OUTGOING EVENTS (emitted via eventBus.emit):
+ * - 'achievement:unlocked' → { id, rarity, timestamp } when achievement is unlocked
+ *
+ * PERSISTENCE MODEL:
+ * - Unlocked achievements persist to localStorage automatically after unlock
+ * - Internal session stats (lines, score, combo, time) do NOT persist
+ * - Stats reset on 'game:started' event for clean game sessions
+ * - Persistence happens synchronously after achievement unlock
+ *
+ * TESTING NOTES FOR THIS FILE:
+ * - These tests verify localStorage save/load behavior
+ * - Direct unlock calls used to test persistence (bypass event system)
+ * - Event-driven persistence is tested in useAchievements.integration.spec.ts
+ * - Relevant events: None directly tested here (persistence testing only)
+ *
  * BDD style tests with Given-When-Then pattern
  * Tests cover:
  * - Default initialization with empty achievements
@@ -49,15 +76,17 @@ describe('useAchievements localStorage Persistence', () => {
   describe('Default Initialization', () => {
     it('should initialize with empty unlocked achievements array', async () => {
       // Given: Fresh state with no localStorage data
+      // EVENT-DRIVEN: On initialization, event subscriptions are set up
       clearLocalStorage()
       expect(localStorage.getItem('tetris_achievements')).toBeNull()
 
       // When: Creating achievements composable
+      // EVENT-DRIVEN: Composable subscribes to game events (lines, score, combo, time)
       const component = createAchievementsTestComponent()
       const wrapper = mount(component)
       await flushPromises()
 
-      // Then: Should have empty achievements array
+      // Then: Should have empty achievements array (no unlocks yet)
       expect(wrapper.vm.achievements.unlockedAchievements.value).toEqual([])
       expect(wrapper.vm.achievements.stats.value.unlockedCount).toBe(0)
       expect(wrapper.vm.achievements.stats.value.totalAchievements).toBeGreaterThan(0)
@@ -70,11 +99,13 @@ describe('useAchievements localStorage Persistence', () => {
       clearLocalStorage()
 
       // When: Creating achievements composable
+      // EVENT-DRIVEN: Stats initialized to zero, ready to receive events
       const component = createAchievementsTestComponent()
       const wrapper = mount(component)
       await flushPromises()
 
-      // Then: Session stats should have default values
+      // Then: Session stats should have default values (awaiting game events)
+      // EVENT-DRIVEN: Stats will update when 'lines:cleared', 'score:updated', etc. fire
       const sessionStats = wrapper.vm.achievements.sessionStats.value
       expect(sessionStats.linesCleared).toBe(0)
       expect(sessionStats.tetrisCount).toBe(0)
@@ -148,7 +179,7 @@ describe('useAchievements localStorage Persistence', () => {
       wrapper.unmount()
     })
 
-    it('should save session stats to separate localStorage key', async () => {
+    it('should NOT save session stats to localStorage (reserved for future use)', async () => {
       // Given: Component with achievements composable
       clearLocalStorage()
       const component = createAchievementsTestComponent()
@@ -163,12 +194,14 @@ describe('useAchievements localStorage Persistence', () => {
       })
       await flushPromises()
 
-      // Then: Stats should be saved to tetris_achievement_stats key
+      // Then: Stats should NOT be saved to localStorage (see comment in useAchievements.ts)
       const stats = getLocalStorageData('tetris_achievement_stats')
-      expect(stats).not.toBeNull()
-      expect(stats!.linesCleared).toBe(10)
-      expect(stats!.tetrisCount).toBe(2)
-      expect(stats!.gamesPlayed).toBe(5)
+      expect(stats).toBeNull()
+
+      // But in-memory value is updated
+      expect(wrapper.vm.achievements.sessionStats.value.linesCleared).toBe(10)
+      expect(wrapper.vm.achievements.sessionStats.value.tetrisCount).toBe(2)
+      expect(wrapper.vm.achievements.sessionStats.value.gamesPlayed).toBe(5)
 
       wrapper.unmount()
     })
@@ -228,8 +261,8 @@ describe('useAchievements localStorage Persistence', () => {
       wrapper.unmount()
     })
 
-    it('should load session stats from localStorage', async () => {
-      // Given: Pre-existing stats in localStorage
+    it('should NOT load session stats from localStorage (always reset to defaults)', async () => {
+      // Given: Pre-existing stats in localStorage (from old version)
       const savedStats = {
         linesCleared: 25,
         tetrisCount: 5,
@@ -245,18 +278,18 @@ describe('useAchievements localStorage Persistence', () => {
       const wrapper = mount(component)
       await flushPromises()
 
-      // Then: Should load stats from storage
+      // Then: Stats are reset to defaults (not loaded from localStorage)
       const stats = wrapper.vm.achievements.sessionStats.value
-      expect(stats.linesCleared).toBe(25)
-      expect(stats.tetrisCount).toBe(5)
-      expect(stats.maxCombo).toBe(8)
-      expect(stats.gamesPlayed).toBe(10)
+      expect(stats.linesCleared).toBe(0)
+      expect(stats.tetrisCount).toBe(0)
+      expect(stats.maxCombo).toBe(0)
+      expect(stats.gamesPlayed).toBe(0)
 
       wrapper.unmount()
     })
 
-    it('should merge loaded stats with default values', async () => {
-      // Given: Partial stats saved in localStorage
+    it('should NOT merge loaded stats (always use defaults)', async () => {
+      // Given: Partial stats saved in localStorage (from old version)
       const partialStats = {
         linesCleared: 15,
         gamesPlayed: 3
@@ -268,10 +301,10 @@ describe('useAchievements localStorage Persistence', () => {
       const wrapper = mount(component)
       await flushPromises()
 
-      // Then: Missing stats should use defaults
+      // Then: All stats reset to defaults (not merged from localStorage)
       const stats = wrapper.vm.achievements.sessionStats.value
-      expect(stats.linesCleared).toBe(15)
-      expect(stats.gamesPlayed).toBe(3)
+      expect(stats.linesCleared).toBe(0)
+      expect(stats.gamesPlayed).toBe(0)
       expect(stats.tetrisCount).toBe(0)
       expect(stats.maxCombo).toBe(0)
 
@@ -496,12 +529,12 @@ describe('useAchievements localStorage Persistence', () => {
 
       // When: Unlocking achievement with game stats
       const gameStats = { score: 1500, level: 5, lines: 42 }
-      wrapper.vm.achievements.unlockAchievement('speed_lover', gameStats)
+      wrapper.vm.achievements.unlockAchievement('level_5', gameStats)
       await flushPromises()
 
       // Then: Game stats should be saved
       const saved = getLocalStorageData<UnlockedAchievement[]>('tetris_achievements')
-      const achievement = saved!.find(a => a.achievementId === 'speed_lover')
+      const achievement = saved!.find(a => a.achievementId === 'level_5')
       expect(achievement).toBeDefined()
       expect(achievement!.gameStats).toEqual(gameStats)
 
@@ -896,7 +929,7 @@ describe('useAchievements localStorage Persistence', () => {
       wrapper.unmount()
     })
 
-    it('should store stats as object with all expected properties', async () => {
+    it('should NOT store stats in localStorage (in-memory only)', async () => {
       // Given: Component with achievements composable
       clearLocalStorage()
       const component = createAchievementsTestComponent()
@@ -914,15 +947,18 @@ describe('useAchievements localStorage Persistence', () => {
       })
       await flushPromises()
 
-      // Then: Stats should have all required properties
+      // Then: Stats should NOT be in localStorage (reserved for future use)
       const rawStats = localStorage.getItem('tetris_achievement_stats')
-      const stats = JSON.parse(rawStats!)
-      expect(stats).toHaveProperty('linesCleared')
-      expect(stats).toHaveProperty('tetrisCount')
-      expect(stats).toHaveProperty('maxCombo')
-      expect(stats).toHaveProperty('gamesPlayed')
-      expect(stats).toHaveProperty('totalLinesCleared')
-      expect(stats).toHaveProperty('timePlayed')
+      expect(rawStats).toBeNull()
+
+      // But in-memory sessionStats has all properties
+      const stats = wrapper.vm.achievements.sessionStats.value
+      expect(stats).toHaveProperty('linesCleared', 50)
+      expect(stats).toHaveProperty('tetrisCount', 3)
+      expect(stats).toHaveProperty('maxCombo', 5)
+      expect(stats).toHaveProperty('gamesPlayed', 2)
+      expect(stats).toHaveProperty('totalLinesCleared', 100)
+      expect(stats).toHaveProperty('timePlayed', 300)
 
       wrapper.unmount()
     })
@@ -987,7 +1023,7 @@ describe('useAchievements localStorage Persistence', () => {
       wrapper.unmount()
     })
 
-    it('should handle simultaneous achievement and stats updates', async () => {
+    it('should handle achievement unlocks without persisting stats', async () => {
       // Given: Component with achievements composable
       clearLocalStorage()
       const component = createAchievementsTestComponent()
@@ -1009,14 +1045,16 @@ describe('useAchievements localStorage Persistence', () => {
       wrapper.vm.achievements.updateSessionStats({ gamesPlayed: 1 })
       await flushPromises()
 
-      // Then: Both should be saved correctly
+      // Then: Only achievements are saved, stats stay in memory
       const achievements = getLocalStorageData<UnlockedAchievement[]>('tetris_achievements')
       const stats = getLocalStorageData('tetris_achievement_stats')
       expect(achievements).not.toBeNull()
       expect(achievements!.length).toBeGreaterThanOrEqual(2)
-      expect(stats).not.toBeNull()
-      expect(stats!.linesCleared).toBe(10)
-      expect(stats!.gamesPlayed).toBe(1)
+      expect(stats).toBeNull() // Stats not persisted
+
+      // But in-memory stats are updated
+      expect(wrapper.vm.achievements.sessionStats.value.linesCleared).toBe(10)
+      expect(wrapper.vm.achievements.sessionStats.value.gamesPlayed).toBe(1)
 
       wrapper.unmount()
     })

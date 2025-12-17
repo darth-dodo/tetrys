@@ -1,6 +1,47 @@
 import { describe, it, expect } from 'vitest'
 import { useTetris } from '../useTetris'
 
+/**
+ * Test Suite: useTetris Scoring System
+ *
+ * =============================================================================
+ * EVENT-DRIVEN ARCHITECTURE
+ * =============================================================================
+ *
+ * The useTetris composable emits scoring-related events whenever score changes
+ * occur, enabling reactive updates in the UI and achievement tracking.
+ *
+ * EVENTS RELEVANT TO THIS TEST FILE:
+ *
+ * Score Events:
+ *   - score:updated { score, delta, level }
+ *     → Emitted whenever score changes (line clear, piece lock, etc.)
+ *     → delta: Points added in this update
+ *     → score: New total score
+ *     → level: Current level at time of scoring
+ *
+ * Combo Events:
+ *   - combo:updated { combo, isReset }
+ *     → Emitted when combo count changes
+ *     → combo: Current combo multiplier
+ *     → isReset: true if combo was broken, false if continuing
+ *
+ * Event Flow for Scoring:
+ *   1. Line Clear → Calculate Score → Update Internal State → emit('score:updated')
+ *   2. Achievement System Subscriber → Checks for high score, scoring achievements
+ *   3. Audio System Subscriber → Plays score sound effect based on delta
+ *   4. UI Components → Update score display reactively
+ *
+ * Scoring Formula:
+ *   baseScores[linesCleared] * currentLevel * comboMultiplier
+ *
+ * Base Scores:
+ *   - 0 lines: 0 points
+ *   - 1 line:  100 points
+ *   - 2 lines: 300 points
+ *   - 3 lines: 500 points
+ *   - 4 lines: 800 points (Tetris)
+ */
 describe('useTetris - Scoring System', () => {
   describe('calculateScore', () => {
     it('should return 0 points when no lines are cleared', () => {
@@ -14,6 +55,11 @@ describe('useTetris - Scoring System', () => {
     })
 
     it('should calculate correct score for single line (100 points base)', () => {
+      // Given: Scoring algorithm parameters
+      // When: Single line cleared at different levels
+      // Then: Score should follow formula: baseScores[1] * level
+
+      // EVENT: score:updated would be emitted with { score: 100, delta: 100, level: 1 }
 
       // Test the scoring algorithm directly
       // Single line at level 1: 100 * 1 = 100
@@ -25,6 +71,7 @@ describe('useTetris - Scoring System', () => {
       expect(expectedScore).toBe(100)
 
       // Test at level 3
+      // EVENT: score:updated would emit { score: newTotal, delta: 300, level: 3 }
       const level3Score = baseScores[linesCleared] * 3
       expect(level3Score).toBe(300)
     })
@@ -68,6 +115,12 @@ describe('useTetris - Scoring System', () => {
     })
 
     it('should calculate correct score for Tetris/4 lines (800 points base)', () => {
+      // Given: Tetris clear (4 lines) - highest scoring single action
+      // When: Calculated at different levels
+      // Then: Maximum points per clear, triggers achievement checks
+
+      // EVENT: score:updated emitted with high delta value
+      // EVENT: Achievement system checks for "First Tetris", "Tetris Master" achievements
 
       // Tetris (4 lines) at level 1: 800 * 1 = 800
       const linesCleared = 4
@@ -78,10 +131,13 @@ describe('useTetris - Scoring System', () => {
       expect(expectedScore).toBe(800)
 
       // Test at level 2
+      // EVENT: score:updated { score: total, delta: 1600, level: 2 }
       const level2Score = baseScores[linesCleared] * 2
       expect(level2Score).toBe(1600)
 
       // Test at level 10
+      // EVENT: score:updated { score: total, delta: 8000, level: 10 }
+      // EVENT: High score achievement check triggered for 8000-point single clear
       const level10Score = baseScores[linesCleared] * 10
       expect(level10Score).toBe(8000)
     })

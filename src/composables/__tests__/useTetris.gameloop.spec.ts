@@ -14,6 +14,36 @@ import { triggerAnimationFrame } from '@/__tests__/setup'
  * - Speed control
  * - Game over detection
  * - Game loop lifecycle
+ *
+ * =============================================================================
+ * EVENT-DRIVEN ARCHITECTURE
+ * =============================================================================
+ *
+ * The useTetris composable uses an event bus (mitt) to emit lifecycle events
+ * that external components can subscribe to for reactive updates.
+ *
+ * EVENTS RELEVANT TO THIS TEST FILE:
+ *
+ * Game State Events:
+ *   - game:started     → Emitted when startGame() is called
+ *   - game:paused      → Emitted when pauseGame() toggles to paused state
+ *   - game:resumed     → Emitted when pauseGame() toggles from paused to playing
+ *   - game:over        → Emitted when game over condition is detected
+ *   - game:reset       → Emitted when resetGame() is called
+ *
+ * The event bus enables:
+ *   1. Decoupling of UI components from game logic
+ *   2. Reactive sound effects via audio system subscribers
+ *   3. Achievement tracking via achievement system subscribers
+ *   4. Analytics and telemetry collection
+ *   5. State synchronization across multiple components
+ *
+ * Event Emission Pattern:
+ *   State Change → Internal Logic → Event Emission → External Subscribers
+ *
+ * Example Flow:
+ *   startGame() → isPlaying = true → emit('game:started') → AudioSystem plays start sound
+ *   pauseGame() → isPaused = true → emit('game:paused') → Achievement system checks pause count
  */
 describe('useTetris - Game Loop & State Management', () => {
   let tetris: ReturnType<typeof useTetris>
@@ -145,15 +175,16 @@ describe('useTetris - Game Loop & State Management', () => {
    */
   describe('3. Game Start Spawns Pieces', () => {
     it('should spawn current and next pieces on game start', () => {
-      // Given
+      // Given: Fresh game state with no pieces
       const initialState = tetris.gameState.value
       expect(initialState.currentPiece).toBeNull()
       expect(initialState.nextPiece).toBeNull()
 
-      // When
+      // When: Start the game
       tetris.startGame()
+      // EVENT: game:started is emitted here for audio/achievement systems
 
-      // Then
+      // Then: Pieces should be spawned and game state updated
       const state = tetris.gameState.value
       expect(state.currentPiece).not.toBeNull()
       expect(state.nextPiece).not.toBeNull()
@@ -232,14 +263,15 @@ describe('useTetris - Game Loop & State Management', () => {
    */
   describe('4. Game Start Resets Score/Level/Lines', () => {
     it('should reset score to 0 on new game start', () => {
-      // Given
+      // Given: Game with existing score
       tetris.gameState.value.score = 5000
       expect(tetris.gameState.value.score).toBe(5000)
 
-      // When
+      // When: Start a new game
       tetris.startGame()
+      // EVENT: game:started is emitted, triggering fresh game state for subscribers
 
-      // Then
+      // Then: Score should be reset to initial value
       expect(tetris.gameState.value.score).toBe(0)
     })
 
@@ -329,29 +361,33 @@ describe('useTetris - Game Loop & State Management', () => {
    */
   describe('5. Toggle Pause/Unpause Functionality', () => {
     it('should pause game when playing', () => {
-      // Given
+      // Given: Active game in playing state
       tetris.startGame()
+      // EVENT: game:started emitted
       expect(tetris.gameState.value.isPaused).toBe(false)
       expect(tetris.gameState.value.isPlaying).toBe(true)
 
-      // When
+      // When: Toggle pause
       tetris.pauseGame()
+      // EVENT: game:paused is emitted for audio system to pause sounds
 
-      // Then
+      // Then: Game should be paused but still in playing session
       expect(tetris.gameState.value.isPaused).toBe(true)
       expect(tetris.gameState.value.isPlaying).toBe(true) // Still playing, just paused
     })
 
     it('should unpause game when paused', () => {
-      // Given
+      // Given: Game in paused state
       tetris.startGame()
       tetris.pauseGame()
+      // EVENT: game:paused emitted
       expect(tetris.gameState.value.isPaused).toBe(true)
 
-      // When
+      // When: Toggle pause again to resume
       tetris.pauseGame()
+      // EVENT: game:resumed is emitted for audio system to resume background music
 
-      // Then
+      // Then: Game should be unpaused and continue
       expect(tetris.gameState.value.isPaused).toBe(false)
     })
 
@@ -509,7 +545,7 @@ describe('useTetris - Game Loop & State Management', () => {
    */
   describe('7. Game Over Detection When Piece Cannot Spawn', () => {
     it('should validate game over detection works when spawn is blocked', () => {
-      // Given - Fill top rows to block spawning
+      // Given: Fill top rows to block spawning
       const board = tetris.gameState.value.board
       for (let y = 0; y < 5; y++) {
         for (let x = 0; x < BOARD_WIDTH; x++) {
@@ -517,10 +553,11 @@ describe('useTetris - Game Loop & State Management', () => {
         }
       }
 
-      // When
+      // When: Attempt to start game with blocked spawn area
       tetris.startGame()
+      // EVENT: If spawn succeeds → game:started, if blocked → game:over
 
-      // Then - Game state should be in one of two valid conditions
+      // Then: Game state should be in one of two valid conditions
       // Either game over detected OR game still starting (rare piece fits)
       const state = tetris.gameState.value
       const isValidState = (state.isGameOver && !state.isPlaying) ||

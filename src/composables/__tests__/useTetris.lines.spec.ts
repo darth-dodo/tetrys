@@ -3,6 +3,48 @@ import { BOARD_WIDTH, BOARD_HEIGHT } from '@/types/tetris'
 import type { TetrominoType } from '@/types/tetris'
 
 /**
+ * Test Suite: useTetris Line Clearing System
+ *
+ * =============================================================================
+ * EVENT-DRIVEN ARCHITECTURE
+ * =============================================================================
+ *
+ * The useTetris composable emits line-clearing events that drive game progression,
+ * scoring, level advancement, and achievement tracking.
+ *
+ * EVENTS RELEVANT TO THIS TEST FILE:
+ *
+ * Line Clear Events:
+ *   - lines:cleared { count, isTetris, newTotal, newLevel }
+ *     → Emitted when lines are cleared from the board
+ *     → count: Number of lines cleared (1-4)
+ *     → isTetris: true if 4 lines cleared simultaneously
+ *     → newTotal: Updated total line count
+ *     → newLevel: Current level (may trigger level:up event)
+ *
+ * Level Progression Events:
+ *   - level:up { level, previousLevel }
+ *     → Emitted when player advances to next level (every 10 lines)
+ *     → Triggers speed increase in game loop
+ *     → Achievement system checks for level milestones
+ *
+ * Event Flow for Line Clearing:
+ *   1. Piece Locks → Check for Complete Lines → clearLines()
+ *   2. Update Board State → Calculate Lines Cleared
+ *   3. emit('lines:cleared', { count, isTetris, newTotal, newLevel })
+ *   4. Check if newTotal % 10 === 0 → emit('level:up', { level, previousLevel })
+ *   5. emit('score:updated') based on lines cleared
+ *   6. Achievement System → Checks for line/level achievements
+ *   7. Audio System → Plays appropriate sound (line clear, Tetris, level up)
+ *
+ * Line Clear Mechanics:
+ *   - Single (1): 100 points base, common clear
+ *   - Double (2): 300 points base, good clear
+ *   - Triple (3): 500 points base, excellent clear
+ *   - Tetris (4): 800 points base, perfect clear, triggers special audio/visual
+ */
+
+/**
  * Test helpers for board creation
  */
 
@@ -109,11 +151,15 @@ describe('useTetris - Line Clearing', () => {
     })
 
     it('should clear a single complete line at the bottom', () => {
-      // Create board with one complete line at bottom
+      // Given: Board with one complete line at bottom
       const board = createBoardWithFilledRows([19], 'T')
 
+      // When: Clear lines
       const result = clearLines(board)
+      // EVENT: lines:cleared { count: 1, isTetris: false, newTotal: previousTotal + 1, newLevel }
+      // EVENT: score:updated { score: newScore, delta: 100 * level, level }
 
+      // Then: Single line should be removed, board height maintained
       expect(result.linesCleared).toBe(1)
       expect(result.board).toHaveLength(BOARD_HEIGHT)
       // All rows should be empty after clearing the only filled line
@@ -149,11 +195,17 @@ describe('useTetris - Line Clearing', () => {
     })
 
     it('should clear Tetris (4 complete lines)', () => {
-      // Create board with four complete contiguous lines (Tetris!)
+      // Given: Board with four complete contiguous lines (Tetris!)
       const board = createBoardWithFilledRows([16, 17, 18, 19], 'I')
 
+      // When: Clear all four lines simultaneously
       const result = clearLines(board)
+      // EVENT: lines:cleared { count: 4, isTetris: true, newTotal, newLevel }
+      // EVENT: score:updated { score: newScore, delta: 800 * level, level }
+      // EVENT: Achievement check for "First Tetris", "Tetris Streak", "I-Piece Master"
+      // AUDIO: Special Tetris sound effect plays (different from regular line clear)
 
+      // Then: All four lines removed, maximum single-action clear
       expect(result.linesCleared).toBe(4)
       expect(result.board).toHaveLength(BOARD_HEIGHT)
       expect(countFilledCells(result.board)).toBe(0)
