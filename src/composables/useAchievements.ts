@@ -283,8 +283,8 @@ const setupEventSubscriptions = () => {
     checkWithCurrentStats()
   })
 
-  bus.on('time:tick', (data: { time: number }) => {
-    eventDrivenStats.timePlayed = data.time
+  bus.on('time:tick', (data: { timePlayed: number }) => {
+    eventDrivenStats.timePlayed = data.timePlayed
     checkWithCurrentStats()
   })
 }

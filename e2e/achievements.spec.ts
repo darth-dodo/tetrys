@@ -302,15 +302,24 @@ test.describe('Achievement Notification System', () => {
     await page.click('button:has-text("Start Game")')
     await page.waitForTimeout(1000)
 
+    // Wait for any welcome notifications to clear completely
+    await page.waitForTimeout(5000)
+
     // Test different rarity levels
     for (const rarity of ['common', 'rare', 'epic', 'legendary']) {
-      // Clear previous notifications
+      // Clear all previous notifications and wait for them to fully disappear
       await page.evaluate(() => {
         const { clearNotifications } = (window as any).useAchievements()
         clearNotifications()
       })
 
-      await page.waitForTimeout(500)
+      // Wait for any existing notification to disappear
+      const anyNotification = page.locator('.achievement-notification')
+      try {
+        await expect(anyNotification).toBeHidden({ timeout: 5000 })
+      } catch {
+        // If no notification existed, that's fine
+      }
 
       // Trigger achievement of specific rarity
       await page.evaluate((r) => {
@@ -318,18 +327,16 @@ test.describe('Achievement Notification System', () => {
         triggerDevAchievement(r as any)
       }, rarity)
 
-      // Wait for notification
-      const notification = page.locator('.achievement-notification')
-      await expect(notification).toBeVisible({ timeout: 2000 })
+      // Wait for notification with specific rarity class to appear
+      // This uses Playwright's built-in retry mechanism
+      const notification = page.locator(`.achievement-notification.rarity-${rarity}`)
+      await expect(notification).toBeVisible({ timeout: 3000 })
 
-      // Verify rarity class is applied
-      const hasRarityClass = await notification.evaluate((el, r) => {
-        return el.classList.contains(`rarity-${r}`)
-      }, rarity)
+      // Additional verification: check the rarity badge text
+      const rarityBadge = notification.locator('.achievement-rarity')
+      await expect(rarityBadge).toHaveText(rarity)
 
-      expect(hasRarityClass).toBe(true)
-
-      // Wait for notification to disappear before next iteration
+      // Wait for notification to complete its display cycle (4s display + 300ms transition)
       await page.waitForTimeout(5000)
     }
   })

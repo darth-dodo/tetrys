@@ -251,12 +251,15 @@ export function useTetris() {
             // Emit line clear events
             bus.emit('lines:cleared', {
               count: linesCleared,
-              totalLines: gameState.value.lines
+              isTetris: linesCleared === 4,
+              newTotal: gameState.value.lines,
+              newLevel: gameState.value.level
             })
 
             bus.emit('score:updated', {
               score: gameState.value.score,
-              pointsEarned: calculateScore(linesCleared, gameState.value.level)
+              delta: calculateScore(linesCleared, gameState.value.level),
+              level: gameState.value.level
             })
 
             if (gameState.value.level > previousLevel) {
@@ -267,11 +270,16 @@ export function useTetris() {
             }
 
             bus.emit('combo:updated', {
-              combo: gameState.value.combo
+              combo: gameState.value.combo,
+              isReset: false
             })
           } else {
             // Reset combo when no lines cleared
             gameState.value.combo = 0
+            bus.emit('combo:updated', {
+              combo: 0,
+              isReset: true
+            })
           }
 
           spawnNewPiece()
@@ -352,7 +360,6 @@ export function useTetris() {
   }
 
   const pauseGame = (): void => {
-    const wasPaused = gameState.value.isPaused
     gameState.value.isPaused = !gameState.value.isPaused
 
     if (gameState.value.isPaused) {

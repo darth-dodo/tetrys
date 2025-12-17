@@ -3,8 +3,8 @@
 A modern implementation of the classic Tetris game built with Vue 3, TypeScript, and modern web technologies. Features multiple themes, 8-bit audio system, mobile-first responsive design, and comprehensive game mechanics.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Tests](https://img.shields.io/badge/tests-616%20passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/coverage-82.46%25-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-689%20passing-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-85.2%25-brightgreen)]()
 [![Test Pass Rate](https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue)]()
 [![Vue](https://img.shields.io/badge/Vue-3.4+-green)]()

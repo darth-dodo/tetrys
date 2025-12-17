@@ -214,7 +214,6 @@ describe('useTetris - Time Tracking', () => {
       tetris.startGame()
       vi.advanceTimersByTime(30000)
       expect(tetris.gameState.value.timePlayed).toBeGreaterThanOrEqual(20)
-      const timeAfterPlaying = tetris.gameState.value.timePlayed
 
       // When: Reset game
       tetris.resetGame()

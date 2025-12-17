@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useGameBus, gameBus } from '@/composables/useGameBus'
 import { useAchievements } from '@/composables/useAchievements'
-import type { GameBusEvents } from '@/types/events'
 
 /**
  * Test Suite: useGameBus Event-Driven Game System
@@ -673,9 +672,10 @@ describe('useGameBus - Event-Driven Game System', () => {
 
     describe('Game Bus and Achievement Integration', () => {
       it('should allow setting up listeners for game events', () => {
-        // Given: Game bus and achievement system
+        // Given: Game bus (used by achievement system)
         const bus = useGameBus()
-        const achievements = useAchievements()
+        // Achievement system integration is tested separately
+        useAchievements()
 
         // When: Setup listener for score updates
         const handler = vi.fn()
@@ -689,9 +689,10 @@ describe('useGameBus - Event-Driven Game System', () => {
       })
 
       it('should allow setting up listeners for line clear events', () => {
-        // Given: Game bus and achievement system
+        // Given: Game bus (used by achievement system)
         const bus = useGameBus()
-        const achievements = useAchievements()
+        // Achievement system integration is tested separately
+        useAchievements()
 
         // When: Setup listener for lines cleared
         const handler = vi.fn()
@@ -711,9 +712,10 @@ describe('useGameBus - Event-Driven Game System', () => {
       })
 
       it('should allow setting up listeners for combo events', () => {
-        // Given: Game bus and achievement system
+        // Given: Game bus (used by achievement system)
         const bus = useGameBus()
-        const achievements = useAchievements()
+        // Achievement system integration is tested separately
+        useAchievements()
 
         // When: Setup listener for combo updates
         const handler = vi.fn()
@@ -728,9 +730,10 @@ describe('useGameBus - Event-Driven Game System', () => {
       })
 
       it('should handle game:started event with achievement system active', () => {
-        // Given: Game bus and achievement system
+        // Given: Game bus (used by achievement system)
         const bus = useGameBus()
-        const achievements = useAchievements()
+        // Achievement system integration is tested separately
+        useAchievements()
 
         // When: Game starts
         const handler = vi.fn()
@@ -742,9 +745,10 @@ describe('useGameBus - Event-Driven Game System', () => {
       })
 
       it('should handle game:over event with full game statistics', () => {
-        // Given: Game bus and achievement system
+        // Given: Game bus (used by achievement system)
         const bus = useGameBus()
-        const achievements = useAchievements()
+        // Achievement system integration is tested separately
+        useAchievements()
 
         // When: Setup listener for game over
         const handler = vi.fn()

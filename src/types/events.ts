@@ -61,8 +61,12 @@ export interface AchievementEvents {
   }
 }
 
-// Combined events for the global bus
-export type GameBusEvents = GameEvents & AchievementEvents
+// Combined events for the global bus - satisfies mitt's Record constraint
+export type GameBusEvents = {
+  [K in keyof (GameEvents & AchievementEvents)]: (GameEvents & AchievementEvents)[K]
+} & {
+  [key: string]: unknown
+}
 
 // Event payload type helper
 export type EventPayload<E extends keyof GameBusEvents> = GameBusEvents[E]
