@@ -5,7 +5,6 @@ import {
   getAchievementsByCategory,
   getAchievementsByRarity
 } from '../achievements'
-import type { Achievement } from '../../types/achievements'
 
 describe('ACHIEVEMENTS data', () => {
   it('should contain all 62 achievements', () => {

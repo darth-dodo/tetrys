@@ -3,7 +3,7 @@ import { defineComponent, h } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { useTetris } from '@/composables/useTetris'
 import { BOARD_WIDTH, BOARD_HEIGHT, TETROMINO_SHAPES } from '@/types/tetris'
-import type { TetrominoType, TetrominoShape, Position } from '@/types/tetris'
+import type { TetrominoType } from '@/types/tetris'
 import { triggerAnimationFrame } from '@/__tests__/setup'
 
 /**
@@ -81,9 +81,6 @@ describe('useTetris - Branch Coverage Improvements', () => {
       const board = tetris.gameState.value.board
       board[10][5] = 'I'
 
-      // Get current piece and force a specific position
-      const currentPiece = tetris.gameState.value.currentPiece!
-
       // When: Try to move piece to a position where empty cells would overlap
       // but filled cells don't
       // This tests the inner loop condition: if (piece.shape[y][x])
@@ -151,7 +148,6 @@ describe('useTetris - Branch Coverage Improvements', () => {
         }
 
         // When: Try to move the piece
-        const initialY = tetris.gameState.value.currentPosition.y
         const canMoveDown = tetris.movePiece(0, 1)
         const canMoveLeft = tetris.movePiece(-1, 0)
         const canMoveRight = tetris.movePiece(1, 0)
@@ -288,7 +284,6 @@ describe('useTetris - Branch Coverage Improvements', () => {
       }
 
       // When: Try to rotate piece (may be blocked by wall or filled cells)
-      const initialShape = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
       tetris.rotatePiece()
       const afterRotation = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
 
@@ -611,9 +606,8 @@ describe('useTetris - Branch Coverage Improvements', () => {
      * Then: All branches should be exercised for different shapes
      */
     it('should handle multiple piece shapes with full branch coverage', () => {
-      const shapes: TetrominoType[] = ['I', 'O', 'T', 'L', 'J', 'S', 'Z']
-
-      shapes.forEach(shape => {
+      // Run test 7 times to exercise code with different random pieces
+      for (let iteration = 0; iteration < 7; iteration++) {
         // Start fresh game
         tetris.resetGame()
         tetris.startGame()
@@ -638,7 +632,7 @@ describe('useTetris - Branch Coverage Improvements', () => {
         }
 
         expect(moveCount).toBeGreaterThan(0)
-      })
+      }
     })
   })
 
@@ -685,7 +679,6 @@ describe('useTetris - Branch Coverage Improvements', () => {
       }
 
       // Try to rotate (may be blocked or allowed depending on piece)
-      const shapeBeforeRotation = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
       tetris.rotatePiece()
       const shapeAfterRotation = JSON.stringify(tetris.gameState.value.currentPiece?.shape)
 
@@ -740,8 +733,6 @@ describe('useTetris - Branch Coverage Improvements', () => {
       for (let col = 0; col < BOARD_WIDTH - 2; col++) {
         board[BOARD_HEIGHT - 1][col] = 'I'
       }
-
-      const initialLines = tetris.gameState.value.lines
 
       // Drop piece and trigger game loop
       tetris.dropPiece()
@@ -952,7 +943,6 @@ describe('useTetris - Branch Coverage Improvements', () => {
 
       // When: Drop piece (should trigger line clear via update loop)
       const initialScore = tetris.gameState.value.score
-      const initialLines = tetris.gameState.value.lines
 
       // Drop piece multiple times
       for (let i = 0; i < 25; i++) {
