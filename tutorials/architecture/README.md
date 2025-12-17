@@ -80,48 +80,310 @@ graph TB
 - `types/theme.ts` - Theme configuration and color scheme definitions
 - `localStorage` - Browser storage for settings persistence
 
-## 🔄 Data Flow Architecture
+## 🔄 Event-Driven Architecture
+
+Tetrys implements a sophisticated event-driven architecture that decouples components and composables through a centralized event bus system, enabling reactive communication, testability, and maintainability.
+
+**Quick Overview**:
+- **Event Bus**: Singleton mitt instance (200 bytes) with TypeScript type safety
+- **Publishers**: useTetris emits 9 event types (game:started, lines:cleared, score:updated, etc.)
+- **Subscribers**: useAudio, useAchievements, and UI components react to events
+- **Benefits**: Zero coupling between game logic and side effects, easy feature additions, simplified testing
+- **Development**: Automatic event logging in dev mode for debugging
+
+### Event-Driven Design Principles
+
+**Core Philosophy**:
+- **Decoupling**: Components don't need direct references to each other
+- **Single Responsibility**: Emitters focus on business logic, subscribers focus on reactions
+- **Testability**: Events can be intercepted and verified in isolation
+- **Scalability**: New features subscribe to existing events without modifying emitters
+- **Reactivity**: Automatic UI updates through Vue's reactive system
+
+**Benefits**:
+- Clean separation between game logic (useTetris) and side effects (useAudio, useAchievements)
+- Components can subscribe to events without tight coupling to game state
+- Easy to add new features (e.g., achievements) without modifying existing code
+- Simplified testing through event mocking and verification
+- Built-in development logging for debugging event flow
+
+### Event Bus Implementation
+
+**Technology Choice**: [mitt](https://github.com/developit/mitt) - A tiny (200 bytes) functional event emitter
+- Type-safe through TypeScript generics
+- Zero dependencies, tree-shakeable
+- Fast performance with minimal overhead
+- Simple API: `on()`, `off()`, `emit()`
+
+**Singleton Pattern**:
+```typescript
+// src/composables/useGameBus.ts
+import mitt from 'mitt'
+import type { GameBusEvents } from '@/types/events'
+
+// Create singleton event bus instance
+const gameBus = mitt<GameBusEvents>()
+
+// Development mode: log all events for debugging
+if (import.meta.env.DEV) {
+  gameBus.on('*', (type, event) => {
+    console.log(`[GameBus] ${String(type)}`, event)
+  })
+}
+
+export function useGameBus() {
+  return gameBus
+}
+```
+
+**Type Safety**:
+```typescript
+// src/types/events.ts
+export interface GameEvents {
+  'game:started': { timestamp: number }
+  'lines:cleared': { count: number; isTetris: boolean; newTotal: number }
+  'score:updated': { score: number; delta: number; level: number }
+  'combo:updated': { combo: number; isReset: boolean }
+  'achievement:unlocked': { id: AchievementId; rarity: string; timestamp: number }
+  // ... more typed events
+}
+
+export type GameBusEvents = GameEvents & { [key: string]: unknown }
+```
+
+### System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        EVENT-DRIVEN SYSTEM                           │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐           ┌──────────────┐           ┌──────────────┐
+│              │           │              │           │              │
+│  useTetris   │──emit───→ │  Event Bus   │──on─────→ │  useAudio    │
+│  (Emitter)   │           │  (Singleton) │           │ (Subscriber) │
+│              │           │              │           │              │
+└──────────────┘           └──────┬───────┘           └──────────────┘
+                                  │
+                                  │
+                         ┌────────┼────────┐
+                         │                 │
+                    ┌────▼─────┐     ┌────▼────────┐
+                    │          │     │             │
+                    │  useAch  │     │ Components  │
+                    │ ievements│     │    (UI)     │
+                    │          │     │             │
+                    └──────────┘     └─────────────┘
+
+EVENT FLOW EXAMPLE:
+==================
+User Action → movePiece() → clearLines() → emit('lines:cleared')
+                                                    │
+                    ┌───────────────────────────────┼─────────────┐
+                    ▼                               ▼             ▼
+              playSound('line')            checkAchievements()  UI Update
+```
+
+### Event Flow Architecture
+
+**Publisher-Subscriber Pattern**:
+
+```typescript
+// EMITTER: useTetris (Game Logic)
+const clearLines = () => {
+  const linesCleared = detectFullLines()
+
+  // Emit event with structured payload
+  bus.emit('lines:cleared', {
+    count: linesCleared,
+    isTetris: linesCleared === 4,
+    newTotal: gameState.lines,
+    newLevel: gameState.level
+  })
+
+  // Emitter doesn't know or care who's listening
+}
+
+// SUBSCRIBER: useAudio (Sound Effects)
+bus.on('lines:cleared', (data) => {
+  playSound(data.isTetris ? 'tetris' : 'line')
+})
+
+// SUBSCRIBER: useAchievements (Progress Tracking)
+bus.on('lines:cleared', (data) => {
+  eventDrivenStats.lines += data.count
+  if (data.isTetris) eventDrivenStats.tetrisCount++
+  checkAchievements()
+})
+
+// SUBSCRIBER: UI Component (Visual Feedback)
+bus.on('lines:cleared', (data) => {
+  showLineClearAnimation(data.count)
+})
+```
+
+### Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     USER INTERACTION FLOW                        │
+└─────────────────────────────────────────────────────────────────┘
+
+Input (Keyboard/Touch/Button)
+         │
+         ▼
+┌────────────────┐
+│ GameControls   │  User presses left arrow
+│   Component    │
+└────────┬───────┘
+         │ call
+         ▼
+┌────────────────┐
+│  useTetris()   │  movePiece(-1, 0)
+│  Composable    │
+└────────┬───────┘
+         │
+         ▼
+   Game Logic Updates
+   (collision detection,
+    position update,
+    state mutation)
+         │
+         ▼
+┌────────────────┐
+│ emit() Events  │  'piece:moved', 'score:updated', etc.
+└────────┬───────┘
+         │
+         ├───────────┬──────────────┬─────────────┐
+         ▼           ▼              ▼             ▼
+   ┌─────────┐ ┌──────────┐ ┌───────────┐ ┌──────────┐
+   │ useAudio│ │useAchieve│ │Components │ │  Other   │
+   │         │ │  ments   │ │   (UI)    │ │Subscribers│
+   └────┬────┘ └────┬─────┘ └─────┬─────┘ └────┬─────┘
+        │           │             │            │
+        ▼           ▼             ▼            ▼
+   Play Sound   Check Progress  Re-render   Custom Logic
+                 Unlock Badge   Animation
+         │           │             │            │
+         └───────────┴─────────────┴────────────┘
+                         │
+                         ▼
+                 User perceives result
+              (sound, visuals, feedback)
+```
+
+### Composable Event Relationships
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   EVENT EMITTERS (Publishers)                │
+└─────────────────────────────────────────────────────────────┘
+
+useTetris.ts
+  ├─ emit('game:started') ──────→ Reset tracking, start music
+  ├─ emit('game:paused') ───────→ Pause music, show pause UI
+  ├─ emit('game:over') ─────────→ Stop music, play game over sound
+  ├─ emit('lines:cleared') ─────→ Play sound, check achievements
+  ├─ emit('score:updated') ─────→ Check score achievements
+  ├─ emit('level:up') ──────────→ Play level up sound
+  ├─ emit('combo:updated') ─────→ Check combo achievements
+  ├─ emit('piece:placed') ──────→ Track piece placement
+  └─ emit('time:tick') ─────────→ Track play time
+
+useAchievements.ts
+  └─ emit('achievement:unlocked') → Play sound, show notification
+
+┌─────────────────────────────────────────────────────────────┐
+│                  EVENT SUBSCRIBERS (Listeners)               │
+└─────────────────────────────────────────────────────────────┘
+
+useAudio.ts
+  ├─ on('game:started') ────────→ startMusic()
+  ├─ on('game:paused') ─────────→ pauseMusic()
+  ├─ on('game:over') ───────────→ stopMusic(), playSound('gameover')
+  ├─ on('lines:cleared') ───────→ playSound('line' | 'tetris')
+  ├─ on('level:up') ────────────→ playSound('levelup')
+  └─ on('achievement:unlocked') → playSound('achievement')
+
+useAchievements.ts
+  ├─ on('game:started') ────────→ Reset stats tracking
+  ├─ on('lines:cleared') ───────→ Update lines, tetris count
+  ├─ on('score:updated') ───────→ Update score
+  ├─ on('combo:updated') ───────→ Update combo
+  └─ on('time:tick') ───────────→ Update time played
+
+UI Components (GameBoard, ScoreBoard, etc.)
+  ├─ on('lines:cleared') ───────→ Show clear animation
+  ├─ on('level:up') ────────────→ Show level up visual
+  ├─ on('combo:updated') ───────→ Display combo counter
+  └─ on('achievement:unlocked') → Show notification toast
+```
 
 ### Reactive State Management
 
 ```typescript
-// Composable Pattern
+// Composable Pattern with Event Integration
 export function useGameFeature() {
+  const bus = useGameBus()
+
   // 1. Reactive State
   const state = ref(initialState)
-  
+
   // 2. Computed Properties
   const derivedState = computed(() => transform(state.value))
-  
-  // 3. Actions/Methods
+
+  // 3. Actions/Methods (emit events for side effects)
   const actions = {
-    updateState: (newValue) => { state.value = newValue },
-    complexAction: async () => { /* business logic */ }
+    updateState: (newValue) => {
+      state.value = newValue
+      bus.emit('state:updated', { newValue }) // Notify subscribers
+    },
+    complexAction: async () => {
+      /* business logic */
+      bus.emit('action:completed', { timestamp: Date.now() })
+    }
   }
-  
-  // 4. Lifecycle Management
+
+  // 4. Event Subscriptions (react to other systems)
+  bus.on('external:event', (data) => {
+    state.value = processExternalData(data)
+  })
+
+  // 5. Lifecycle Management
   onMounted(() => { /* initialization */ })
-  onUnmounted(() => { /* cleanup */ })
-  
-  // 5. Public API
+  onUnmounted(() => {
+    bus.off('external:event') // Cleanup subscriptions
+  })
+
+  // 6. Public API
   return { state, derivedState, ...actions }
 }
 ```
 
-### Component-Composable Integration
+### Component-Event Integration
 
 ```vue
 <script setup lang="ts">
 // Import composables
 const { gameState, movePiece, pauseGame } = useTetris()
 const { playSound } = useAudio()
+const bus = useGameBus()
+
+// Direct composable calls (synchronous)
+const handleUserAction = () => {
+  movePiece(1, 0) // Updates game state
+  // No need to manually call playSound - event system handles it!
+  // useTetris emits 'piece:moved' → useAudio subscribes → plays sound
+}
+
+// Subscribe to events for UI-specific reactions
+bus.on('lines:cleared', (data) => {
+  // Show visual feedback independent of game logic
+  showLineClearAnimation(data.count)
+})
 
 // Reactive data flows automatically through template
-// Actions trigger state updates and re-renders
-const handleUserAction = () => {
-  movePiece(1, 0)
-  playSound('move')
-}
+// Events trigger side effects without tight coupling
 </script>
 ```
 
@@ -179,48 +441,291 @@ const gameLoop = (timestamp: number) => {
 
 ## 🎵 Audio System Architecture
 
+**Quick Overview**:
+- **Procedural Audio**: All sounds generated in real-time using Web Audio API (no audio files)
+- **Lookahead Scheduling**: MusicScheduler schedules notes 100ms ahead for sub-millisecond precision
+- **Audio Graph**: AudioContext → Gain Nodes (music/sound) → Oscillators → ADSR Envelopes → Speakers
+- **Event Integration**: Subscribes to game events for automatic audio reactions
+- **Browser Support**: Works on all modern browsers with autoplay policy handling
+
+### Web Audio API Design
+
+**Architecture Philosophy**: Procedural audio generation using Web Audio API for zero-latency, high-performance sound without external audio files. All sounds are synthesized in real-time using oscillators and ADSR envelopes.
+
+**Key Components**:
+- **AudioContext**: Browser's audio processing engine
+- **Gain Nodes**: Separate volume controls for music and sound effects
+- **MusicScheduler**: Lookahead scheduling system for precise timing
+- **Oscillators**: Synthesized waveforms for all sounds
+
+### Audio Node Graph Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    WEB AUDIO GRAPH                           │
+└─────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────┐
+                    │  AudioContext   │
+                    │   (Singleton)   │
+                    └────────┬────────┘
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+          ┌─────────▼────────┐  ┌────▼──────────┐
+          │  musicGainNode   │  │ soundGainNode │
+          │  (Volume: 0-1)   │  │ (Volume: 0-1) │
+          └─────────┬────────┘  └────┬──────────┘
+                    │                │
+          ┌─────────┴────────┐  ┌────┴──────────┐
+          │                  │  │               │
+   ┌──────▼───────┐   ┌─────▼─────┐   ┌────▼────────┐
+   │ Oscillator 1 │   │Oscillator 2│   │ Oscillator 3│
+   │  (Music)     │   │  (Music)   │   │  (SFX)      │
+   └──────┬───────┘   └─────┬─────┘   └────┬────────┘
+          │                 │               │
+   ┌──────▼───────┐   ┌─────▼─────┐   ┌────▼────────┐
+   │ Envelope     │   │ Envelope  │   │ Envelope    │
+   │ (ADSR Gain)  │   │ (ADSR)    │   │ (ADSR)      │
+   └──────────────┘   └───────────┘   └─────────────┘
+          │                 │               │
+          └─────────┬───────┴───────────────┘
+                    │
+          ┌─────────▼────────┐
+          │ AudioDestination │
+          │   (Speakers)     │
+          └──────────────────┘
+```
+
 ### Web Audio API Integration
 
 ```typescript
-// Audio Context Management
-const audioContext = new AudioContext()
-const musicGainNode = audioContext.createGain()
-const soundGainNode = audioContext.createGain()
+// Audio Context Management (Module-level singletons)
+let audioContext: AudioContext | null = null
+let musicGainNode: GainNode | null = null
+let soundGainNode: GainNode | null = null
 
-// Procedural Sound Generation
-const createBeep = (frequency: number, duration: number) => {
+// Initialize audio system
+const initAudioContext = async (): Promise<boolean> => {
+  if (!audioContext) {
+    // Create AudioContext (with webkit prefix for Safari)
+    audioContext = new (window.AudioContext || window.webkitAudioContext)()
+
+    // Create separate gain nodes for music and sound effects
+    musicGainNode = audioContext.createGain()
+    soundGainNode = audioContext.createGain()
+
+    // Connect to audio output
+    musicGainNode.connect(audioContext.destination)
+    soundGainNode.connect(audioContext.destination)
+
+    updateVolumes() // Apply saved volume settings
+  }
+
+  // Resume if suspended (browser autoplay policy)
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume()
+  }
+
+  return audioContext.state === 'running'
+}
+
+// Procedural Sound Generation with ADSR Envelope
+const createBeep = (frequency: number, duration: number, type: OscillatorType = 'square') => {
+  if (!audioContext || !soundGainNode) return
+
+  // Create oscillator (sound source)
   const oscillator = audioContext.createOscillator()
-  const envelope = audioContext.createGain()
-  
-  // Configure and connect audio nodes
-  oscillator.type = 'square'
+  oscillator.type = type // 'square', 'sine', 'triangle', 'sawtooth'
   oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime)
+
+  // Create envelope (ADSR: Attack, Decay, Sustain, Release)
+  const envelope = audioContext.createGain()
+  envelope.gain.setValueAtTime(0, audioContext.currentTime) // Start at 0
+  envelope.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01) // Attack
+  envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration) // Release
+
+  // Connect: Oscillator → Envelope → Sound Gain → Output
   oscillator.connect(envelope)
   envelope.connect(soundGainNode)
+
+  // Schedule playback
+  oscillator.start(audioContext.currentTime)
+  oscillator.stop(audioContext.currentTime + duration)
 }
 ```
+
+### MusicScheduler: Lookahead Scheduling System
+
+**Problem**: JavaScript's `setTimeout` and `setInterval` are imprecise (±10ms jitter) and don't align with AudioContext's high-precision timing.
+
+**Solution**: Web Audio API lookahead scheduling pattern - schedule notes in advance using AudioContext's precise clock.
+
+**Architecture**:
+```
+┌────────────────────────────────────────────────────────────┐
+│             LOOKAHEAD SCHEDULING TIMELINE                   │
+└────────────────────────────────────────────────────────────┘
+
+JavaScript Time (imprecise):
+   │         │         │         │
+   ├─ Check ├─ Check ├─ Check ├─ Check (every 25ms)
+   │  Notes  │  Notes │  Notes │  Notes
+
+AudioContext Time (precise):
+   │    │    │    │    │    │    │    │    │
+   ├──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼ (high precision)
+      │  │  │  │  │  │  │  │
+      └──┴──┴──┴──┴──┴──┴──┴─ Scheduled notes (100ms ahead)
+
+Lookahead Window:
+   │<──────── 100ms ─────────>│
+   │  currentTime             │ scheduleAheadTime
+   │                          │
+   └──────────────────────────┘
+```
+
+**Implementation**:
+```typescript
+class MusicScheduler {
+  private scheduleAheadTime = 0.1 // Schedule 100ms ahead
+  private schedulerTimer: number | null = null
+  private nextNoteTime = 0
+  private currentNoteIndex = 0
+  private isPlaying = false
+
+  start() {
+    if (!audioContext || this.isPlaying) return
+
+    this.isPlaying = true
+    this.nextNoteTime = audioContext.currentTime
+    this.scheduleNotes() // Start scheduling loop
+  }
+
+  private scheduleNotes() {
+    if (!audioContext || !musicGainNode || !this.isPlaying) return
+
+    const track = musicTracks[this.currentTrackId]
+
+    // Schedule all notes that fall within the lookahead window
+    while (this.nextNoteTime < audioContext.currentTime + this.scheduleAheadTime) {
+      this.scheduleNote(track[this.currentNoteIndex])
+      this.advanceNote(track)
+    }
+
+    // Check again in 25ms (high frequency for precision)
+    this.schedulerTimer = window.setTimeout(() => {
+      this.scheduleNotes()
+    }, 25)
+  }
+
+  private scheduleNote(note: { freq: number; duration: number }) {
+    if (!audioContext || !musicGainNode) return
+
+    // Create oscillator for this note
+    const oscillator = audioContext.createOscillator()
+    const envelope = audioContext.createGain()
+
+    oscillator.type = 'square' // Retro 8-bit sound
+    oscillator.frequency.setValueAtTime(note.freq, this.nextNoteTime)
+
+    // ADSR envelope for musical expression
+    envelope.gain.setValueAtTime(0, this.nextNoteTime)
+    envelope.gain.linearRampToValueAtTime(0.1, this.nextNoteTime + 0.01) // Attack
+    envelope.gain.exponentialRampToValueAtTime(0.001, this.nextNoteTime + note.duration - 0.01) // Release
+
+    // Connect: Oscillator → Envelope → Music Gain → Output
+    oscillator.connect(envelope)
+    envelope.connect(musicGainNode)
+
+    // Schedule note playback at precise time
+    oscillator.start(this.nextNoteTime)
+    oscillator.stop(this.nextNoteTime + note.duration)
+  }
+
+  private advanceNote(track: { freq: number; duration: number }[]) {
+    const note = track[this.currentNoteIndex]
+    this.nextNoteTime += note.duration // Advance time by note duration
+    this.currentNoteIndex = (this.currentNoteIndex + 1) % track.length // Loop track
+  }
+}
+```
+
+**Lookahead Benefits**:
+- Notes scheduled with sub-millisecond precision
+- Immune to JavaScript thread blocking
+- Smooth playback without timing jitter
+- Efficient CPU usage (check every 25ms, not every note)
+
+### Browser Compatibility Considerations
+
+```typescript
+// Safari requires webkit prefix
+audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+
+// Autoplay policy: AudioContext starts suspended
+// Must resume on user interaction
+document.addEventListener('click', async () => {
+  if (audioContext?.state === 'suspended') {
+    await audioContext.resume()
+  }
+})
+
+// iOS requires user interaction before any audio
+// ensureAudioContextRunning() called on every sound play attempt
+```
+
+**Browser Support**:
+- Chrome/Edge: Full support
+- Firefox: Full support
+- Safari: Full support (with webkit prefix)
+- iOS Safari: Requires user interaction for first sound
+- Mobile Chrome: Autoplay restrictions apply
 
 ### Audio State Management
 
 ```typescript
 const audioSystem = {
-  // Context Management
+  // Context Management (handles browser autoplay policies)
   initAudioContext: () => Promise<boolean>
   ensureAudioContextRunning: () => Promise<boolean>
-  
-  // Music System
+
+  // Music System (lookahead scheduling)
   startMusic: () => void
-  pauseMusic: () => void
-  resumeMusic: () => void
-  
-  // Sound Effects
-  playSound: (type: SoundType) => Promise<void>
-  
-  // Settings
+  pauseMusic: () => void   // Pause without losing position
+  resumeMusic: () => void  // Resume from paused position
+  stopMusic: () => void    // Stop and reset position
+
+  // Sound Effects (immediate playback)
+  playSound: (type: 'move' | 'rotate' | 'drop' | 'line' | 'gameover') => Promise<void>
+
+  // Settings (with localStorage persistence)
   toggleMusic: () => Promise<void>
-  setVolume: (type: 'music' | 'sound', volume: number) => void
+  toggleSound: () => Promise<void>
+  setMusicVolume: (volume: number) => void
+  setSoundVolume: (volume: number) => void
+  setCurrentTrack: (trackId: string) => void
+
+  // Track Management (4 procedural music tracks)
+  getAvailableTracks: () => TrackInfo[]
 }
 ```
+
+### Event-Driven Audio Integration
+
+```typescript
+// Subscribe to game events for automatic audio reactions
+const bus = useGameBus()
+
+bus.on('game:started', () => startMusic())
+bus.on('game:paused', ({ isPaused }) => isPaused ? pauseMusic() : resumeMusic())
+bus.on('game:over', () => { stopMusic(); playSound('gameover') })
+bus.on('lines:cleared', ({ isTetris }) => playSound(isTetris ? 'tetris' : 'line'))
+bus.on('level:up', () => playSound('levelup'))
+bus.on('achievement:unlocked', () => playSound('achievement'))
+```
+
+**Reference**: See [Web Audio Concepts](../concepts/web-audio.md) for detailed API documentation
 
 ## 🎨 Theme System Architecture
 
@@ -452,4 +957,31 @@ export default defineConfig({
 
 ---
 
-This architecture provides a solid foundation for a maintainable, performant, and scalable modern web game. The reactive nature of Vue 3 combined with TypeScript ensures type safety and excellent developer experience.
+## 🔗 Related Documentation
+
+### Event-Driven Architecture
+- **[Event System Guide](../guides/event-system.md)** - Detailed guide on using the event bus
+- **[Event Types Reference](../../src/types/events.ts)** - Complete event type definitions
+- **[useGameBus API](../../src/composables/useGameBus.ts)** - Event bus implementation
+
+### Audio Architecture
+- **[Web Audio Concepts](../concepts/web-audio.md)** - Web Audio API fundamentals
+- **[Audio Implementation](../../src/composables/useAudio.ts)** - Complete audio system code
+- **[MusicScheduler Pattern](../concepts/web-audio.md#lookahead-scheduling)** - Detailed scheduling explanation
+
+### Game Architecture
+- **[Game Logic Guide](../guides/game-logic.md)** - Game mechanics and state management
+- **[useTetris Composable](../../src/composables/useTetris.ts)** - Core game logic implementation
+- **[Game State Types](../../src/types/tetris.ts)** - Game state type definitions
+
+### Component Architecture
+- **[Component Development](../guides/component-development.md)** - Component patterns and best practices
+- **[Vue Composition API](https://vuejs.org/guide/extras/composition-api-faq.html)** - Official Vue documentation
+
+### Testing Architecture
+- **[Testing Guide](../guides/testing.md)** - Testing strategies and patterns
+- **[Event Testing](../guides/testing.md#event-testing)** - Testing event-driven systems
+
+---
+
+This architecture provides a solid foundation for a maintainable, performant, and scalable modern web game. The event-driven design enables clean separation of concerns, while the Web Audio API integration delivers high-performance procedural audio. The reactive nature of Vue 3 combined with TypeScript ensures type safety and excellent developer experience.

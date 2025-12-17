@@ -5,17 +5,18 @@ The Tetrys achievement system provides a comprehensive gamification layer with *
 ## Table of Contents
 
 1. [System Architecture](#system-architecture)
-2. [Achievement Categories](#achievement-categories)
-3. [Rarity Tiers](#rarity-tiers)
-4. [Core Components](#core-components)
-5. [API Reference](#api-reference)
-6. [Integration Guide](#integration-guide)
-7. [Adding New Achievements](#adding-new-achievements)
-8. [Notification System](#notification-system)
-9. [Persistence Layer](#persistence-layer)
-10. [Testing Achievements](#testing-achievements)
-11. [Performance Optimization](#performance-optimization)
-12. [Troubleshooting](#troubleshooting)
+2. [Event-Driven Achievement Checking](#event-driven-achievement-checking)
+3. [Achievement Categories](#achievement-categories)
+4. [Rarity Tiers](#rarity-tiers)
+5. [Core Components](#core-components)
+6. [API Reference](#api-reference)
+7. [Integration Guide](#integration-guide)
+8. [Adding New Achievements](#adding-new-achievements)
+9. [Notification System](#notification-system)
+10. [Persistence Layer](#persistence-layer)
+11. [Testing Achievements](#testing-achievements)
+12. [Performance Optimization](#performance-optimization)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -31,8 +32,15 @@ Achievement System Architecture
 │   ├── Rarity Classification
 │   └── Condition Specifications
 │
+├── Event Layer (eventBus.ts)
+│   ├── Event Subscriptions (lines:cleared, score:updated, etc.)
+│   ├── Event Emissions (achievement:unlocked)
+│   ├── Internal Stat Tracking
+│   └── Decoupled Communication
+│
 ├── Logic Layer (useAchievements.ts)
 │   ├── State Management (Vue Reactivity)
+│   ├── Event Listeners & Handlers
 │   ├── Unlock Logic & Validation
 │   ├── Progress Calculation
 │   ├── Notification Queue Management
@@ -53,10 +61,301 @@ Achievement System Architecture
 ### Key Design Principles
 
 1. **Reactive State Management**: Built on Vue 3 composition API with reactive refs and computed properties
-2. **Event-Driven Architecture**: Achievements checked on game state changes, not on intervals
+2. **Event-Driven Architecture**: Decoupled from game logic via event subscriptions
 3. **Queue-Based Notifications**: Sequential display prevents notification overlap
 4. **Fail-Safe Persistence**: Error handling for localStorage operations
 5. **Performance-First**: Early exits, minimal computation, efficient checks
+
+---
+
+## Event-Driven Achievement Checking
+
+The achievement system is **completely decoupled** from the game logic through an event-driven architecture. Instead of directly accessing game state, `useAchievements` subscribes to game events and maintains internal statistics.
+
+### Architecture Benefits
+
+1. **Loose Coupling**: Achievement system has zero dependencies on `useTetris` composable
+2. **Easy Testing**: Can trigger achievements by emitting events, no need to mock game state
+3. **Extensibility**: New achievement triggers can be added by emitting new event types
+4. **Clear Boundaries**: Game logic doesn't know about achievements, achievements don't know about game internals
+
+### Event Subscription Model
+
+The achievement system subscribes to game events during initialization:
+
+```typescript
+// In useAchievements.ts
+import { eventBus, GameEvent } from '@/utils/eventBus'
+
+// Subscribe to game events
+eventBus.on('lines:cleared', (linesCleared: number) => {
+  internalStats.linesCleared += linesCleared
+  checkAchievements({ lines: internalStats.linesCleared })
+})
+
+eventBus.on('score:updated', (newScore: number) => {
+  internalStats.score = newScore
+  checkAchievements({ score: newScore })
+})
+
+eventBus.on('level:up', (newLevel: number) => {
+  internalStats.level = newLevel
+  checkAchievements({ level: newLevel })
+})
+
+eventBus.on('combo:updated', (comboCount: number) => {
+  internalStats.maxCombo = Math.max(internalStats.maxCombo, comboCount)
+  checkAchievements({ combo: comboCount })
+})
+
+eventBus.on('time:tick', (seconds: number) => {
+  internalStats.timePlayed = seconds
+  checkAchievements({ timePlayed: seconds })
+})
+
+eventBus.on('game:started', () => {
+  // Reset internal stats for new game
+  internalStats.linesCleared = 0
+  internalStats.score = 0
+  internalStats.level = 1
+  internalStats.maxCombo = 0
+  internalStats.timePlayed = 0
+})
+```
+
+### Subscribed Events
+
+The achievement system listens to the following events:
+
+| Event | Payload | Updates Stat | Triggers Achievement Check |
+|-------|---------|--------------|----------------------------|
+| `lines:cleared` | `number` | `linesCleared` | Lines, Gameplay achievements |
+| `score:updated` | `number` | `score` | Scoring achievements |
+| `level:up` | `number` | `level` | Progression achievements |
+| `combo:updated` | `number` | `maxCombo` | Skill, Combo achievements |
+| `time:tick` | `number` | `timePlayed` | Time-based achievements |
+| `game:started` | `void` | Resets all stats | Welcome achievement |
+| `tetris:cleared` | `void` | `tetrisCount++` | Tetris achievements |
+
+### Emitted Events
+
+When achievements are unlocked, the system emits events for other parts of the application:
+
+```typescript
+// Event emitted on achievement unlock
+eventBus.emit('achievement:unlocked', {
+  id: achievementId,
+  rarity: achievement.rarity,
+  timestamp: new Date()
+})
+```
+
+**Event Structure:**
+```typescript
+interface AchievementUnlockedEvent {
+  id: AchievementId
+  rarity: AchievementRarity
+  timestamp: Date
+}
+```
+
+**Usage Example:**
+```typescript
+// In a custom analytics component
+eventBus.on('achievement:unlocked', (event) => {
+  console.log(`Achievement unlocked: ${event.id} (${event.rarity})`)
+  trackAnalytics('achievement_unlocked', {
+    achievement_id: event.id,
+    rarity: event.rarity
+  })
+})
+```
+
+### Progressive Unlock Cascade
+
+The event-driven system enables progressive achievement unlocking. Each achievement check can trigger new unlocks, which in turn can trigger more checks:
+
+```typescript
+// Example flow for reaching level 5 from level 1
+game.levelUp()  // Level 2
+  → eventBus.emit('level:up', 2)
+  → useAchievements receives event
+  → internalStats.level = 2
+  → checkAchievements({ level: 2 })
+  → Unlocks 'level_2' achievement
+  → eventBus.emit('achievement:unlocked', { id: 'level_2', ... })
+
+game.levelUp()  // Level 3
+  → eventBus.emit('level:up', 3)
+  → checkAchievements({ level: 3 })
+  → Unlocks 'level_3' achievement (prerequisite: level_2 ✓)
+
+// Pattern continues for level 4, 5, etc.
+```
+
+### Testing with Events
+
+The event-driven architecture makes testing extremely simple:
+
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest'
+import { useAchievements } from '@/composables/useAchievements'
+import { eventBus } from '@/utils/eventBus'
+
+describe('Event-Driven Achievement Unlocking', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    const achievements = useAchievements()
+    achievements.resetAchievements()
+  })
+
+  it('should unlock achievement when lines:cleared event is emitted', () => {
+    const achievements = useAchievements()
+
+    // Emit event (no need to mock game state)
+    eventBus.emit('lines:cleared', 10)
+
+    // Verify achievement unlocked
+    expect(achievements.isUnlocked('lines_10')).toBe(true)
+  })
+
+  it('should track combo achievements via combo:updated events', () => {
+    const achievements = useAchievements()
+
+    // Emit progressive combo events
+    eventBus.emit('combo:updated', 2)
+    expect(achievements.isUnlocked('combo_2')).toBe(true)
+
+    eventBus.emit('combo:updated', 3)
+    expect(achievements.isUnlocked('combo_3')).toBe(true)
+
+    eventBus.emit('combo:updated', 4)
+    expect(achievements.isUnlocked('combo_4')).toBe(true)
+  })
+
+  it('should reset stats when game:started event is emitted', () => {
+    const achievements = useAchievements()
+
+    // Build up stats
+    eventBus.emit('lines:cleared', 50)
+    eventBus.emit('score:updated', 10000)
+    eventBus.emit('level:up', 5)
+
+    // Start new game
+    eventBus.emit('game:started')
+
+    // Stats should be reset (verify by checking internal behavior)
+    // Next line clear should start from 0
+    eventBus.emit('lines:cleared', 1)
+    expect(achievements.isUnlocked('first_blood')).toBe(true)
+  })
+
+  it('should emit achievement:unlocked event when achievement is triggered', () => {
+    const achievements = useAchievements()
+    const unlockedEvents: any[] = []
+
+    // Subscribe to achievement unlocks
+    eventBus.on('achievement:unlocked', (event) => {
+      unlockedEvents.push(event)
+    })
+
+    // Trigger achievement
+    eventBus.emit('level:up', 1)
+
+    // Verify event was emitted
+    expect(unlockedEvents).toHaveLength(1)
+    expect(unlockedEvents[0].id).toBe('welcome')
+    expect(unlockedEvents[0].rarity).toBe('common')
+  })
+})
+```
+
+### Manual Event Triggering for Development
+
+During development, you can manually trigger achievements using the event system:
+
+```javascript
+// In browser console
+import { eventBus } from '@/utils/eventBus'
+
+// Trigger progression achievements
+eventBus.emit('level:up', 10)  // Unlock level 10 achievement
+
+// Trigger scoring achievements
+eventBus.emit('score:updated', 50000)  // Unlock 50K score achievement
+
+// Trigger gameplay achievements
+eventBus.emit('lines:cleared', 100)  // Unlock 100 lines achievement
+
+// Trigger combo achievements
+eventBus.emit('combo:updated', 10)  // Unlock 10x combo achievement
+
+// Start new game (resets stats)
+eventBus.emit('game:started')
+```
+
+### Event Flow Diagram
+
+```
+Game Logic                    Event Bus                Achievement System
+───────────                   ─────────                ──────────────────
+    │                             │                            │
+    │ clearLines(4)               │                            │
+    ├──────────────────────────>  │                            │
+    │                             │                            │
+    │                             │ emit('lines:cleared', 4)  │
+    │                             ├────────────────────────>   │
+    │                             │                            │
+    │                             │                            │ internalStats.linesCleared += 4
+    │                             │                            │ checkAchievements({ lines: 4 })
+    │                             │                            │
+    │                             │ emit('achievement:unlocked')│
+    │                             │ <──────────────────────────┤
+    │                             │                            │
+    │                             │                            │ Queue notification
+    │                             │                            │ Save to localStorage
+    │                             │                            │
+```
+
+### Integration with Game Loop
+
+The game loop emits events at key moments:
+
+```typescript
+// In useTetris.ts
+import { eventBus } from '@/utils/eventBus'
+
+const clearLines = () => {
+  const linesCleared = detectFullLines()
+  if (linesCleared > 0) {
+    gameState.lines += linesCleared
+    gameState.score += calculateScore(linesCleared)
+
+    // Emit events for achievement system
+    eventBus.emit('lines:cleared', linesCleared)
+    eventBus.emit('score:updated', gameState.score)
+
+    if (linesCleared === 4) {
+      eventBus.emit('tetris:cleared')
+    }
+  }
+}
+
+const levelUp = () => {
+  gameState.level++
+  eventBus.emit('level:up', gameState.level)
+}
+
+const updateCombo = (count: number) => {
+  gameState.combo = count
+  eventBus.emit('combo:updated', count)
+}
+
+const startGame = () => {
+  resetGameState()
+  eventBus.emit('game:started')
+}
+```
 
 ---
 
