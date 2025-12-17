@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
 import type { Theme, ThemeId } from '@/types/theme'
 import { themes } from '@/types/theme'
 
@@ -57,10 +57,12 @@ export function useTheme() {
     applyThemeToDocument(newTheme)
   }, { immediate: true })
   
-  // Load saved theme on mount
-  onMounted(() => {
-    loadSavedTheme()
-  })
+  // Load saved theme on mount - only register if in component context
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      loadSavedTheme()
+    })
+  }
   
   return {
     currentTheme,

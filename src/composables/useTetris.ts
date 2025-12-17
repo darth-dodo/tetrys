@@ -1,4 +1,4 @@
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, getCurrentInstance } from 'vue'
 import type {
   GameState,
   TetrominoShape,
@@ -406,13 +406,15 @@ export function useTetris() {
     gameStartTime = 0
   }
 
-  // Cleanup
-  onUnmounted(() => {
-    if (gameLoop) {
-      cancelAnimationFrame(gameLoop)
-    }
-    stopTimeTracking()
-  })
+  // Cleanup - only register if in component context
+  if (getCurrentInstance()) {
+    onUnmounted(() => {
+      if (gameLoop) {
+        cancelAnimationFrame(gameLoop)
+      }
+      stopTimeTracking()
+    })
+  }
 
   return {
     gameState: computed(() => gameState.value),

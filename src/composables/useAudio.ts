@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 
 interface AudioSettings {
   musicEnabled: boolean
@@ -460,15 +460,17 @@ export function useAudio() {
     musicScheduler = null
   }
 
-  // Load settings on mount
-  onMounted(() => {
-    loadSettings()
-    updateVolumes()
-  })
+  // Load settings on mount - only register if in component context
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      loadSettings()
+      updateVolumes()
+    })
 
-  onUnmounted(() => {
-    cleanup()
-  })
+    onUnmounted(() => {
+      cleanup()
+    })
+  }
 
   return {
     // State

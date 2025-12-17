@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 
 const SPEED_STORAGE_KEY = 'tetrys-speed-setting'
 const DEFAULT_SPEED = 1
@@ -39,10 +39,12 @@ export function useSpeed() {
     saveSpeed()
   }
   
-  // Load settings on mount
-  onMounted(() => {
-    loadSpeed()
-  })
+  // Load settings on mount - only register if in component context
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      loadSpeed()
+    })
+  }
   
   return {
     speedMultiplier: computed(() => speedMultiplier.value),
