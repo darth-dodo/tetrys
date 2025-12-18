@@ -21,6 +21,10 @@ const DEFAULT_SETTINGS: AudioSettings = {
 let audioContext: AudioContext | null = null
 let musicGainNode: GainNode | null = null
 let soundGainNode: GainNode | null = null
+let isAudioAvailable = true
+
+// Track active oscillators for proper cleanup
+const activeOscillators = new Set<OscillatorNode>()
 
 // Audio settings
 const settings = ref<AudioSettings>({ ...DEFAULT_SETTINGS })
@@ -114,8 +118,18 @@ class MusicScheduler {
     oscillator.connect(envelope)
     envelope.connect(musicGainNode)
 
+    // Track oscillator for cleanup
+    activeOscillators.add(oscillator)
+
     oscillator.start(this.nextNoteTime)
     oscillator.stop(this.nextNoteTime + note.duration)
+
+    // Remove from tracking when stopped
+    oscillator.onended = () => {
+      activeOscillators.delete(oscillator)
+      oscillator.disconnect()
+      envelope.disconnect()
+    }
   }
 
   private advanceNote(track: { freq: number; duration: number }[]) {
@@ -214,7 +228,14 @@ export function useAudio() {
   const initAudioContext = async (): Promise<boolean> => {
     if (!audioContext) {
       try {
-        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        // Check for Web Audio API availability
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+        if (!AudioContextClass) {
+          isAudioAvailable = false
+          return false
+        }
+
+        audioContext = new AudioContextClass()
 
         // Create gain nodes
         musicGainNode = audioContext.createGain()
@@ -225,7 +246,7 @@ export function useAudio() {
 
         updateVolumes()
       } catch (error) {
-        console.warn('Failed to initialize audio context:', error)
+        isAudioAvailable = false
         return false
       }
     }
@@ -234,8 +255,10 @@ export function useAudio() {
     if (audioContext.state === 'suspended') {
       try {
         await audioContext.resume()
+
+        // Wait briefly for state to change
+        await new Promise(resolve => setTimeout(resolve, 50))
       } catch (error) {
-        console.warn('Failed to resume audio context:', error)
         return false
       }
     }
@@ -245,6 +268,10 @@ export function useAudio() {
 
   // Ensure audio context is running (for user interaction)
   const ensureAudioContextRunning = async (): Promise<boolean> => {
+    if (!isAudioAvailable) {
+      return false
+    }
+
     if (!audioContext) {
       return await initAudioContext()
     }
@@ -253,7 +280,6 @@ export function useAudio() {
       try {
         await audioContext.resume()
       } catch (error) {
-        console.warn('Failed to resume audio context:', error)
         return false
       }
     }
@@ -287,8 +313,18 @@ export function useAudio() {
     oscillator.connect(envelope)
     envelope.connect(soundGainNode)
 
+    // Track oscillator for cleanup
+    activeOscillators.add(oscillator)
+
     oscillator.start(audioContext.currentTime)
     oscillator.stop(audioContext.currentTime + duration)
+
+    // Remove from tracking when stopped
+    oscillator.onended = () => {
+      activeOscillators.delete(oscillator)
+      oscillator.disconnect()
+      envelope.disconnect()
+    }
   }
 
   const createChord = (frequencies: number[], duration: number) => {
@@ -297,11 +333,10 @@ export function useAudio() {
 
   // Music controls
   const startMusic = async () => {
-    if (!settings.value.musicEnabled) return
+    if (!settings.value.musicEnabled || !isAudioAvailable) return
 
     const initialized = await initAudioContext()
     if (!initialized) {
-      console.warn('Could not initialize audio context for music')
       return
     }
 
@@ -325,11 +360,10 @@ export function useAudio() {
   }
 
   const resumeMusic = async () => {
-    if (!settings.value.musicEnabled) return
+    if (!settings.value.musicEnabled || !isAudioAvailable) return
 
     const initialized = await initAudioContext()
     if (!initialized) {
-      console.warn('Could not initialize audio context for resuming music')
       return
     }
 
@@ -449,14 +483,53 @@ export function useAudio() {
   }
 
   // Cleanup
-  const cleanup = () => {
+  const cleanup = async () => {
     stopMusic()
-    if (audioContext) {
-      audioContext.close()
-      audioContext = null
+
+    // Stop all active oscillators
+    activeOscillators.forEach(oscillator => {
+      try {
+        if (oscillator.context.state !== 'closed') {
+          oscillator.stop()
+          oscillator.disconnect()
+        }
+      } catch (e) {
+        // Oscillator may have already stopped
+      }
+    })
+    activeOscillators.clear()
+
+    // Disconnect gain nodes
+    if (musicGainNode) {
+      try {
+        musicGainNode.disconnect()
+      } catch (e) {
+        // Already disconnected
+      }
       musicGainNode = null
+    }
+
+    if (soundGainNode) {
+      try {
+        soundGainNode.disconnect()
+      } catch (e) {
+        // Already disconnected
+      }
       soundGainNode = null
     }
+
+    // Close audio context
+    if (audioContext) {
+      try {
+        if (audioContext.state !== 'closed') {
+          await audioContext.close()
+        }
+      } catch (e) {
+        // Context may already be closed
+      }
+      audioContext = null
+    }
+
     musicScheduler = null
   }
 
