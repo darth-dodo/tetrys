@@ -46,10 +46,7 @@
           <AudioControls />
         </div>
         <div class="settings-section">
-          <SpeedControl
-            :current-speed="speedMultiplier"
-            @set-speed="setSpeed"
-          />
+          <DifficultySelector :is-playing="gameState.isPlaying" />
         </div>
         <div class="settings-actions">
           <button class="close-button" @click="closeSettings">
@@ -143,11 +140,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useTetris } from '@/composables/useTetris'
 import { useTheme } from '@/composables/useTheme'
 import { useAudio } from '@/composables/useAudio'
-import { useSpeed } from '@/composables/useSpeed'
 import { useAchievements } from '@/composables/useAchievements'
 import GameBoard from '@/components/GameBoard.vue'
 import GameControls from '@/components/GameControls.vue'
@@ -155,7 +151,7 @@ import NextPiece from '@/components/NextPiece.vue'
 import ScoreBoard from '@/components/ScoreBoard.vue'
 import ThemeSelector from '@/components/ThemeSelector.vue'
 import AudioControls from '@/components/AudioControls.vue'
-import SpeedControl from '@/components/SpeedControl.vue'
+import DifficultySelector from '@/components/DifficultySelector.vue'
 import AchievementNotification from '@/components/AchievementNotification.vue'
 
 // Settings panel state
@@ -166,9 +162,6 @@ useTheme()
 
 // Use audio system
 const { playSound, startMusic, pauseMusic, resumeMusic, isMusicEnabled } = useAudio()
-
-// Use speed system
-const { speedMultiplier, setSpeed } = useSpeed()
 
 // Use achievements system - CACHED ONCE at component level
 const { triggerDevAchievement, saveError, isQuotaError, clearSaveError } = useAchievements()
@@ -181,14 +174,8 @@ const {
   dropPiece,
   startGame: originalStartGame,
   pauseGame: originalPauseGame,
-  resetGame,
-  setSpeedMultiplier
+  resetGame
 } = useTetris()
-
-// Watch for speed changes and update game
-watch(speedMultiplier, (newSpeed) => {
-  setSpeedMultiplier(newSpeed)
-}, { immediate: true })
 
 // Audio system manages its own state - no interference needed
 
