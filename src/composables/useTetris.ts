@@ -13,10 +13,14 @@ import {
   SPEED_INCREASE_PER_LEVEL
 } from '@/types/tetris'
 import { useGameBus } from './useGameBus'
+import { useDifficulty } from './useDifficulty'
 
 export function useTetris() {
   // Initialize game bus
   const bus = useGameBus()
+
+  // Initialize difficulty system
+  const { speedMultiplier, linesPerLevel, scoreMultiplier, pieceWeights } = useDifficulty()
 
   // Game state
   const gameState = ref<GameState>({
@@ -32,8 +36,7 @@ export function useTetris() {
     timePlayed: 0,
     isGameOver: false,
     isPaused: false,
-    isPlaying: false,
-    speedMultiplier: 1
+    isPlaying: false
   })
 
   let gameLoop: number | null = null
@@ -47,18 +50,35 @@ export function useTetris() {
   // Computed properties
   const fallSpeed = computed(() => {
     const baseSpeed = Math.max(100, INITIAL_FALL_SPEED - (gameState.value.level - 1) * SPEED_INCREASE_PER_LEVEL)
-    return Math.max(50, Math.floor(baseSpeed / gameState.value.speedMultiplier))
+    return Math.max(50, Math.floor(baseSpeed / speedMultiplier.value))
   })
 
-  // Create random tetromino
+  // Create random tetromino with weighted selection based on difficulty
   const createRandomTetromino = (): TetrominoShape => {
     const types: TetrominoType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
-    const type = types[Math.floor(Math.random() * types.length)]
-    const shapes = TETROMINO_SHAPES[type]
+    const weights = pieceWeights.value
+
+    // Calculate total weight
+    const totalWeight = types.reduce((sum, t) => sum + weights[t], 0)
+
+    // Generate random value within total weight
+    let random = Math.random() * totalWeight
+    let selectedType: TetrominoType = 'T' // Default fallback
+
+    // Select piece based on weighted probability
+    for (const pieceType of types) {
+      random -= weights[pieceType]
+      if (random <= 0) {
+        selectedType = pieceType
+        break
+      }
+    }
+
+    const shapes = TETROMINO_SHAPES[selectedType]
 
     return {
       shape: shapes[0], // Start with first rotation
-      type
+      type: selectedType
     }
   }
 
@@ -135,7 +155,7 @@ export function useTetris() {
   // Calculate score
   const calculateScore = (linesCleared: number, level: number): number => {
     const baseScores = [0, 100, 300, 500, 800]
-    return baseScores[linesCleared] * level
+    return Math.floor(baseScores[linesCleared] * level * scoreMultiplier.value)
   }
 
   // Move piece
@@ -238,7 +258,7 @@ export function useTetris() {
             const previousLevel = gameState.value.level
             gameState.value.lines += linesCleared
             gameState.value.score += calculateScore(linesCleared, gameState.value.level)
-            gameState.value.level = Math.floor(gameState.value.lines / 10) + 1
+            gameState.value.level = Math.floor(gameState.value.lines / linesPerLevel.value) + 1
 
             // Track tetrisCount (4 lines cleared at once)
             if (linesCleared === 4) {
@@ -293,11 +313,6 @@ export function useTetris() {
     }
   }
 
-  // Speed control
-  const setSpeedMultiplier = (multiplier: number): void => {
-    gameState.value.speedMultiplier = multiplier
-  }
-
   // Time tracking helper
   const updateTimePlayed = (): void => {
     if (gameState.value.isPlaying && !gameState.value.isPaused) {
@@ -333,7 +348,6 @@ export function useTetris() {
 
   // Game controls
   const startGame = (): void => {
-    const currentSpeed = gameState.value.speedMultiplier
     gameState.value = {
       board: Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null)),
       currentPiece: null,
@@ -347,8 +361,7 @@ export function useTetris() {
       timePlayed: 0,
       isGameOver: false,
       isPaused: false,
-      isPlaying: true,
-      speedMultiplier: currentSpeed
+      isPlaying: true
     }
 
     startTimeTracking()
@@ -423,7 +436,6 @@ export function useTetris() {
     dropPiece,
     startGame,
     pauseGame,
-    resetGame,
-    setSpeedMultiplier
+    resetGame
   }
 }

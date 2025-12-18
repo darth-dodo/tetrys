@@ -78,7 +78,6 @@ describe('useTetris - Game Loop & State Management', () => {
       expect(state.isGameOver).toBe(false)
       expect(state.isPaused).toBe(false)
       expect(state.isPlaying).toBe(false)
-      expect(state.speedMultiplier).toBe(1)
     })
 
     it('should initialize with no active pieces', () => {
@@ -323,16 +322,14 @@ describe('useTetris - Game Loop & State Management', () => {
       expect(tetris.gameState.value.isPaused).toBe(false)
     })
 
-    it('should preserve speed multiplier across game restarts', () => {
-      // Given
-      tetris.setSpeedMultiplier(2.5)
-      expect(tetris.gameState.value.speedMultiplier).toBe(2.5)
-
+    it('should start fresh game without speed state in gameState', () => {
+      // Given - difficulty is now controlled by useDifficulty composable
       // When
       tetris.startGame()
 
-      // Then
-      expect(tetris.gameState.value.speedMultiplier).toBe(2.5)
+      // Then - gameState should not contain speedMultiplier (controlled by difficulty)
+      expect(tetris.gameState.value).not.toHaveProperty('speedMultiplier')
+      expect(tetris.gameState.value.isPlaying).toBe(true)
     })
 
     it('should reset board to empty on new game start', () => {
@@ -453,86 +450,51 @@ describe('useTetris - Game Loop & State Management', () => {
   })
 
   /**
-   * Test 6: Speed Multiplier Updates
+   * Test 6: Difficulty-Based Speed Control
    *
-   * Given: A game instance
-   * When: setSpeedMultiplier() is called with different values
-   * Then: Speed multiplier should update and affect fall speed
+   * Given: A game instance using difficulty system
+   * When: Game runs with different difficulty settings
+   * Then: Speed should be controlled through difficulty composable
+   *
+   * Note: Speed is now controlled via useDifficulty composable
+   * rather than direct setSpeedMultiplier calls
    */
-  describe('6. Speed Multiplier Updates', () => {
-    it('should initialize with speed multiplier of 1', () => {
+  describe('6. Difficulty-Based Speed Control', () => {
+    it('should not have speedMultiplier in gameState (controlled by difficulty)', () => {
       // Given
       // When
-      // Then
-      expect(tetris.gameState.value.speedMultiplier).toBe(1)
+      // Then - speedMultiplier is no longer part of gameState
+      expect(tetris.gameState.value).not.toHaveProperty('speedMultiplier')
     })
 
-    it('should update speed multiplier to 2', () => {
+    it('should not expose setSpeedMultiplier function (controlled by difficulty)', () => {
       // Given
       // When
-      tetris.setSpeedMultiplier(2)
-
-      // Then
-      expect(tetris.gameState.value.speedMultiplier).toBe(2)
+      // Then - setSpeedMultiplier is no longer exposed
+      expect(tetris).not.toHaveProperty('setSpeedMultiplier')
     })
 
-    it('should update speed multiplier to 0.5', () => {
-      // Given
-      // When
-      tetris.setSpeedMultiplier(0.5)
-
-      // Then
-      expect(tetris.gameState.value.speedMultiplier).toBe(0.5)
-    })
-
-    it('should accept multiple sequential speed updates', () => {
-      // Given
-      // When & Then
-      tetris.setSpeedMultiplier(1.5)
-      expect(tetris.gameState.value.speedMultiplier).toBe(1.5)
-
-      tetris.setSpeedMultiplier(3)
-      expect(tetris.gameState.value.speedMultiplier).toBe(3)
-
-      tetris.setSpeedMultiplier(0.8)
-      expect(tetris.gameState.value.speedMultiplier).toBe(0.8)
-    })
-
-    it('should affect fall speed calculation when game is running', () => {
+    it('should maintain consistent game state after starting', () => {
       // Given
       tetris.startGame()
-      const speedMultiplier2X = 2
 
-      // When
-      tetris.setSpeedMultiplier(speedMultiplier2X)
-
-      // Then
-      // Speed multiplier should be updated
-      expect(tetris.gameState.value.speedMultiplier).toBe(speedMultiplier2X)
+      // Then - game state should not include speedMultiplier
+      expect(tetris.gameState.value.isPlaying).toBe(true)
+      expect(tetris.gameState.value).not.toHaveProperty('speedMultiplier')
     })
 
-    it('should preserve speed multiplier across pause/resume', () => {
+    it('should preserve game state across pause/resume', () => {
       // Given
       tetris.startGame()
-      tetris.setSpeedMultiplier(2.5)
+      const initialScore = tetris.gameState.value.score
 
       // When
       tetris.pauseGame()
       tetris.pauseGame() // Resume
 
-      // Then
-      expect(tetris.gameState.value.speedMultiplier).toBe(2.5)
-    })
-
-    it('should accept fractional speed multipliers', () => {
-      // Given
-      const fractionalSpeeds = [0.25, 0.5, 0.75, 1.5, 2.5, 3.5]
-
-      // When & Then
-      for (const speed of fractionalSpeeds) {
-        tetris.setSpeedMultiplier(speed)
-        expect(tetris.gameState.value.speedMultiplier).toBe(speed)
-      }
+      // Then - game state should be preserved
+      expect(tetris.gameState.value.score).toBe(initialScore)
+      expect(tetris.gameState.value.isPlaying).toBe(true)
     })
   })
 

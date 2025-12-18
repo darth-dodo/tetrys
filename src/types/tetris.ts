@@ -24,7 +24,6 @@ export interface GameState {
   isGameOver: boolean
   isPaused: boolean
   isPlaying: boolean
-  speedMultiplier: number
 }
 
 export interface GameStats {
