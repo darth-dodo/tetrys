@@ -70,13 +70,13 @@ describe('useAudio - Branch Coverage Improvements', () => {
     })
 
     /**
-     * Branch 1.2: Return false silently when initAudioContext fails
+     * Branch 1.2: Warn and return when initAudioContext fails
      *
      * Given: Audio context initialization will fail
      * When: ensureAudioContextRunning is called
-     * Then: Should return false silently (graceful degradation)
+     * Then: Should log warning and return false
      */
-    it('should return false silently when initAudioContext fails', async () => {
+    it('should warn when initAudioContext fails', async () => {
       // Given
       const audio = useAudio()
 
@@ -91,8 +91,11 @@ describe('useAudio - Branch Coverage Improvements', () => {
       // When - Try to initialize
       const result = await audio.ensureAudioContextRunning()
 
-      // Then - Should return false (graceful degradation without console warnings)
+      // Then - Should have warned about initialization failure
       expect(result).toBe(false)
+      expect(consoleWarnSpy).toHaveBeenCalled()
+      const call = consoleWarnSpy.mock.calls[0]
+      expect(call[0]).toContain('Failed to initialize audio context')
 
       // Restore original AudioContext
       global.AudioContext = originalAudioContext
