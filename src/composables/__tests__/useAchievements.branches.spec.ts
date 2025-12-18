@@ -163,15 +163,13 @@ describe('useAchievements - Branch Coverage', () => {
 
       // Verify error was set
       expect(achievements.saveError.value).not.toBeNull()
-      expect(achievements.saveError.value).toContain('Storage quota exceeded')
-      expect(achievements.isQuotaError.value).toBe(true)
+      expect(achievements.saveError.value).toContain('Failed to save')
 
       // When: Clear the error
       achievements.clearSaveError()
 
-      // Then: Error and quota flag should be null/false
+      // Then: Error should be null
       expect(achievements.saveError.value).toBeNull()
-      expect(achievements.isQuotaError.value).toBe(false)
     })
 
     it('should handle clearSaveError when no error exists', () => {

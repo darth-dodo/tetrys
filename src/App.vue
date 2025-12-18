@@ -1,26 +1,10 @@
 <template>
   <div class="app">
     <!-- Save Error Warning Banner -->
-    <div
-      v-if="saveError"
-      class="save-error-banner"
-      :class="{ 'quota-error': isQuotaError }"
-      role="alert"
-      aria-live="assertive"
-      aria-atomic="true"
-    >
-      <span class="error-icon">{{ isQuotaError ? '💾' : '⚠️' }}</span>
-      <div class="error-content">
-        <span class="error-message">{{ saveError }}</span>
-        <span v-if="isQuotaError" class="error-help">
-          Try clearing browser cache or disabling other extensions to free up storage space.
-        </span>
-      </div>
-      <button
-        class="error-dismiss"
-        @click="clearSaveError"
-        aria-label="Dismiss storage error notification"
-      >✕</button>
+    <div v-if="saveError" class="save-error-banner" role="alert" aria-live="polite">
+      <span class="error-icon">⚠️</span>
+      <span class="error-message">{{ saveError }}</span>
+      <button class="error-dismiss" @click="clearSaveError" aria-label="Dismiss error">✕</button>
     </div>
 
     <!-- Achievement Notification Overlay -->
@@ -46,7 +30,10 @@
           <AudioControls />
         </div>
         <div class="settings-section">
-          <DifficultySelector :is-playing="gameState.isPlaying" />
+          <SpeedControl
+            :current-speed="speedMultiplier"
+            @set-speed="setSpeed"
+          />
         </div>
         <div class="settings-actions">
           <button class="close-button" @click="closeSettings">
@@ -140,10 +127,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useTetris } from '@/composables/useTetris'
 import { useTheme } from '@/composables/useTheme'
 import { useAudio } from '@/composables/useAudio'
+import { useSpeed } from '@/composables/useSpeed'
 import { useAchievements } from '@/composables/useAchievements'
 import GameBoard from '@/components/GameBoard.vue'
 import GameControls from '@/components/GameControls.vue'
@@ -151,7 +139,7 @@ import NextPiece from '@/components/NextPiece.vue'
 import ScoreBoard from '@/components/ScoreBoard.vue'
 import ThemeSelector from '@/components/ThemeSelector.vue'
 import AudioControls from '@/components/AudioControls.vue'
-import DifficultySelector from '@/components/DifficultySelector.vue'
+import SpeedControl from '@/components/SpeedControl.vue'
 import AchievementNotification from '@/components/AchievementNotification.vue'
 
 // Settings panel state
@@ -163,8 +151,16 @@ useTheme()
 // Use audio system
 const { playSound, startMusic, pauseMusic, resumeMusic, isMusicEnabled } = useAudio()
 
+// Use speed system
+const { speedMultiplier, setSpeed } = useSpeed()
+
 // Use achievements system - CACHED ONCE at component level
-const { triggerDevAchievement, saveError, isQuotaError, clearSaveError } = useAchievements()
+const { triggerDevAchievement, saveError, clearSaveError } = useAchievements()
+
+// Expose achievements functions for E2E testing
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+  ;(window as any).useAchievements = useAchievements
+}
 
 // Use the Tetris game logic
 const {
@@ -174,8 +170,14 @@ const {
   dropPiece,
   startGame: originalStartGame,
   pauseGame: originalPauseGame,
-  resetGame
+  resetGame,
+  setSpeedMultiplier
 } = useTetris()
+
+// Watch for speed changes and update game
+watch(speedMultiplier, (newSpeed) => {
+  setSpeedMultiplier(newSpeed)
+}, { immediate: true })
 
 // Audio system manages its own state - no interference needed
 
@@ -246,8 +248,7 @@ const closeSettings = async (): Promise<void> => {
 
 // DEV: Keyboard shortcut for testing achievements (Ctrl/Cmd + Shift + A)
 const handleDevKeyPress = (e: KeyboardEvent) => {
-  // Only enable in development mode - not accessible in production builds
-  if (import.meta.env.DEV && (e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
     e.preventDefault()
     const rarities: Array<'common' | 'rare' | 'epic' | 'legendary'> = ['common', 'rare', 'epic', 'legendary']
     const randomRarity = rarities[Math.floor(Math.random() * rarities.length)]
@@ -256,43 +257,41 @@ const handleDevKeyPress = (e: KeyboardEvent) => {
   }
 }
 
+// DEV: Expose achievement trigger to window for console access
+if (import.meta.env.DEV) {
+  (window as any).__triggerAchievement = (rarity?: 'common' | 'rare' | 'epic' | 'legendary') => {
+    triggerDevAchievement(rarity)
+  }
+  console.log('🎮 Dev Mode: Use __triggerAchievement("legendary") in console or press Ctrl/Cmd+Shift+A')
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleDevKeyPress)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleDevKeyPress)
+  if (import.meta.env.DEV) {
+    delete (window as any).__triggerAchievement
+  }
+})
+
 // Prevent context menu on long press (mobile)
-const handleContextMenu = (e: Event) => {
+document.addEventListener('contextmenu', (e) => {
   if (e.target instanceof HTMLElement && e.target.closest('.control-button')) {
     e.preventDefault()
   }
-}
+})
 
 // Prevent zoom on double tap (mobile)
 let lastTouchEnd = 0
-const handleTouchEnd = (e: Event) => {
+document.addEventListener('touchend', (e) => {
   const now = new Date().getTime()
   if (now - lastTouchEnd <= 300) {
     e.preventDefault()
   }
   lastTouchEnd = now
-}
-
-onMounted(() => {
-  // Add keyboard listener for dev mode
-  document.addEventListener('keydown', handleDevKeyPress)
-
-  // Add mobile optimization listeners
-  document.addEventListener('contextmenu', handleContextMenu)
-  document.addEventListener('touchend', handleTouchEnd, false)
-
-  // DEV: Log dev mode capabilities (only in development)
-  if (import.meta.env.DEV) {
-    console.log('🎮 Dev Mode: Press Ctrl/Cmd+Shift+A for random achievement')
-  }
-})
-
-onBeforeUnmount(() => {
-  // Clean up all event listeners
-  document.removeEventListener('keydown', handleDevKeyPress)
-  document.removeEventListener('contextmenu', handleContextMenu)
-  document.removeEventListener('touchend', handleTouchEnd)
-})
+}, false)
 </script>
 
 <style scoped>
@@ -315,76 +314,28 @@ onBeforeUnmount(() => {
   color: white;
   padding: 12px 48px 12px 16px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   font-family: monospace;
   font-size: 13px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  animation: slide-down 0.3s ease-out;
-}
-
-.save-error-banner.quota-error {
-  background: rgba(255, 149, 0, 0.95);
-  border-bottom: 3px solid rgba(255, 59, 48, 0.8);
-  padding: 16px 48px 16px 16px;
-}
-
-@keyframes slide-down {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
 }
 
 .error-icon {
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.quota-error .error-icon {
-  font-size: 24px;
-  animation: pulse-storage 2s ease-in-out infinite;
-}
-
-@keyframes pulse-storage {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
-}
-
-.error-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .error-message {
+  flex: 1;
   line-height: 1.4;
-  font-weight: 600;
-}
-
-.error-help {
-  font-size: 11px;
-  line-height: 1.3;
-  opacity: 0.9;
-  font-weight: 400;
 }
 
 .error-dismiss {
   position: absolute;
-  top: 12px;
+  top: 50%;
   right: 12px;
+  transform: translateY(-50%);
   background: transparent;
   border: none;
   color: white;
@@ -392,54 +343,16 @@ onBeforeUnmount(() => {
   cursor: pointer;
   padding: 4px 8px;
   opacity: 0.8;
-  transition: all 0.2s ease;
-  border-radius: 4px;
+  transition: opacity 0.2s ease;
 }
 
 .error-dismiss:hover {
   opacity: 1;
-  background: rgba(0, 0, 0, 0.2);
 }
 
 .error-dismiss:focus {
   outline: 2px solid white;
   outline-offset: 2px;
-  opacity: 1;
-}
-
-.error-dismiss:active {
-  transform: scale(0.95);
-}
-
-/* Mobile responsive for error banner */
-@media (max-width: 480px) {
-  .save-error-banner {
-    font-size: 12px;
-    padding: 10px 40px 10px 12px;
-  }
-
-  .save-error-banner.quota-error {
-    padding: 12px 40px 12px 12px;
-  }
-
-  .error-icon {
-    font-size: 18px;
-  }
-
-  .quota-error .error-icon {
-    font-size: 20px;
-  }
-
-  .error-help {
-    font-size: 10px;
-  }
-
-  .error-dismiss {
-    top: 8px;
-    right: 8px;
-    font-size: 18px;
-    padding: 2px 6px;
-  }
 }
 
 .header {
