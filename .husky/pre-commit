@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+# Pre-commit hook: DevEx, Cleanliness, Security
+# Runs lint-staged for fast, targeted checks on staged files
+
+npx lint-staged

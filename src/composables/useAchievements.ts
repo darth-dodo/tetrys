@@ -135,6 +135,7 @@ const evaluateCondition = (
 
 // Save error tracking (module-level for unlockAchievement)
 const saveError = ref<string | null>(null)
+const isQuotaError = ref<boolean>(false)
 
 // Save achievements to localStorage with atomic rollback (module-level for unlockAchievement)
 const saveAchievements = () => {
@@ -144,8 +145,17 @@ const saveAchievements = () => {
     const achievementsJson = JSON.stringify(unlockedAchievements.value)
     localStorage.setItem(STORAGE_KEY, achievementsJson)
     saveError.value = null
+    isQuotaError.value = false
   } catch (error) {
     console.error('Failed to save achievements, rolling back:', error)
+
+    // Determine if this is a quota/storage error
+    const isStorageError = error instanceof Error && (
+      error.name === 'QuotaExceededError' ||
+      error.message.includes('quota') ||
+      error.message.includes('storage') ||
+      error.message.includes('exceeded')
+    )
 
     try {
       if (backup !== null) {
@@ -157,9 +167,16 @@ const saveAchievements = () => {
       console.error('Failed to rollback, localStorage may be corrupted:', rollbackError)
     }
 
-    saveError.value = error instanceof Error
-      ? `Failed to save: ${error.message}`
-      : 'Failed to save achievements. Your progress may not be saved.'
+    // Set user-friendly error messages with actionable guidance
+    if (isStorageError) {
+      isQuotaError.value = true
+      saveError.value = 'Storage quota exceeded. Your browser storage is full. Please clear browser data or free up space to save achievements.'
+    } else {
+      isQuotaError.value = false
+      saveError.value = error instanceof Error
+        ? `Failed to save achievements: ${error.message}. Your progress may not be saved.`
+        : 'Failed to save achievements. Your progress may not be saved.'
+    }
   }
 }
 
@@ -510,6 +527,7 @@ export function useAchievements() {
   // Clear save error (for UI dismissal)
   const clearSaveError = () => {
     saveError.value = null
+    isQuotaError.value = false
   }
 
   // DEV: Trigger placeholder achievement (for testing UI)
@@ -558,6 +576,7 @@ export function useAchievements() {
     sessionStats: computed(() => sessionStats.value),
     pendingNotifications: computed(() => pendingNotifications.value),
     saveError: computed(() => saveError.value),
+    isQuotaError: computed(() => isQuotaError.value),
 
     // Computed
     getUnlockedAchievements,

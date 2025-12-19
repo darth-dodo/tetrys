@@ -2,11 +2,12 @@
 
 A modern implementation of the classic Tetris game built with Vue 3, TypeScript, and modern web technologies. Features multiple themes, 8-bit audio system, mobile-first responsive design, and comprehensive game mechanics.
 
+[![GitHub](https://img.shields.io/badge/GitHub-Source_Code-181717?logo=github)](https://github.com/darth-dodo/tetrys)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Tests](https://img.shields.io/badge/tests-829%20passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/coverage-85.14%25-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-852%20passing-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-89.7%25-brightgreen)]()
 [![Test Pass Rate](https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4+-blue)]()
 [![Vue](https://img.shields.io/badge/Vue-3.4+-green)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 [![Achievements](https://img.shields.io/badge/achievements-74%20available-purple)]()
@@ -14,6 +15,7 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 ## 🎮 Features
 
 ### 🚀 Modern Web Technologies
+
 - **Vue 3** with Composition API for reactive state management
 - **TypeScript** for type safety and better developer experience
 - **Vite** for lightning-fast development and optimized builds
@@ -21,6 +23,7 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 - **ESLint + Prettier** for code quality and consistency
 
 ### 🎨 Visual Experience
+
 - **8 Stunning Themes**: Classic (default), Retro, Neon, Ocean, Sunset, Minimal, Matrix, Game Boy
 - **Mobile-First Layout**: Side-by-side design with game board left, info panel right
 - **Optimized Screen Usage**: Dynamic viewport sizing for maximum gameplay area
@@ -28,21 +31,25 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 - **Accessibility**: WCAG 2.1 AA compliant with 56px+ touch targets
 
 ### 🎵 Audio System
+
 - **8-bit Sound Effects**: Move, rotate, drop, line clear, and game over sounds
 - **Background Music**: 4 different retro music tracks with seamless looping
 - **Advanced Audio Controls**: Individual volume controls and track selection
 - **Web Audio API**: High-performance audio with proper context management
 
 ### 🎯 Game Features
+
 - **Classic Tetris Gameplay**: All 7 tetromino pieces with proper physics
+- **Difficulty Modes**: Three difficulty levels (Easy, Normal, Hard) affecting speed, scoring, level progression, and piece generation
 - **Progressive Difficulty**: Speed increases with level progression
 - **Scoring System**: Points based on lines cleared and level multiplier
 - **Achievement System**: 74 achievements across 7 categories with animated notifications
-- **Persistent Settings**: Theme, audio, and speed preferences saved locally
+- **Persistent Settings**: Theme, audio, speed, and difficulty preferences saved locally
 - **Pause/Resume**: Full game state management with audio coordination
 - **In-Game Reset**: Instant game restart with confirmation modal
 
 ### 📱 Mobile Optimization
+
 - **Side-by-Side Layout**: Game board left, compact info panel right for single-screen play
 - **Enhanced Touch Controls**: 75x75px control buttons with rich haptic feedback
 - **Contextual Vibration**: Different vibration patterns for each game action
@@ -54,10 +61,12 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm 9+ or yarn 1.22+
 
 ### Installation
+
 ```bash
 # Clone the repository
 git clone https://github.com/darth-dodo/tetrys.git
@@ -73,6 +82,7 @@ npm run dev
 ```
 
 ### Build for Production
+
 ```bash
 # Build optimized production bundle
 npm run build
@@ -90,14 +100,16 @@ npm run type-check
 ## 📚 Documentation
 
 ### Tutorials
+
 - [🚀 Getting Started](./tutorials/getting-started/README.md)
 - [🏗️ Architecture Overview](./tutorials/architecture/README.md)
-- [🧩 Vue Components](./tutorials/components/README.md) 
+- [🧩 Vue Components](./tutorials/components/README.md)
 - [⚡ Composables Deep Dive](./tutorials/composables/README.md)
 - [🧪 Testing Guide](./tutorials/testing/README.md)
 - [🚀 Deployment Guide](./tutorials/deployment/README.md)
 
 ### API Reference
+
 - [Game State Management](./tutorials/composables/game-state.md)
 - [Audio System](./tutorials/composables/audio-system.md)
 - [Theme System](./tutorials/composables/theme-system.md)
@@ -106,6 +118,7 @@ npm run type-check
 ## 🎮 Game Controls
 
 ### Desktop
+
 - **←/→/↓**: Move piece left/right/down
 - **↑**: Rotate piece clockwise
 - **Space**: Hard drop piece
@@ -113,12 +126,13 @@ npm run type-check
 - **R**: Reset current game
 
 ### Mobile
+
 - **Game Board Touch**: Tap to rotate, swipe left/right to move, swipe down to drop
 - **Control Buttons**: Enhanced 75x75px buttons with haptic feedback
 - **Swipe Gestures**: Intuitive directional controls on game board
 - **Vibration Feedback**: Contextual haptic patterns for different actions
 - **Side Panel**: Compact score and next piece info on the right
-- **Settings**: Access via gear icon in header
+- **Settings**: Access via gear icon in header to change difficulty, theme, and audio preferences
 
 ## 🏗️ Project Structure
 
@@ -155,17 +169,20 @@ tetrys/
 Tetrys uses an event-driven architecture with **mitt** as the event bus for decoupled communication between game logic and the achievement system.
 
 ### Event System Overview
+
 The game uses a centralized event bus (`useGameBus()`) that enables components and composables to communicate without tight coupling. This promotes testability, maintainability, and extensibility.
 
 ### Available Events
 
 **Game Events:**
+
 - `game:started` - Fired when a new game begins
 - `game:paused` - Fired when game is paused
 - `game:over` - Fired when game ends
 - `game:reset` - Fired when game is reset
 
 **Gameplay Events:**
+
 - `lines:cleared` - Payload: `{ count: number }` - Lines cleared in single action
 - `score:updated` - Payload: `{ score: number }` - Current score value
 - `level:up` - Payload: `{ level: number }` - New level reached
@@ -173,6 +190,7 @@ The game uses a centralized event bus (`useGameBus()`) that enables components a
 - `time:tick` - Payload: `{ timeElapsed: number }` - Game time in seconds
 
 **Achievement Events:**
+
 - `achievement:unlocked` - Payload: `{ achievement: Achievement }` - New achievement unlocked
 
 ### How to Subscribe
@@ -192,6 +210,7 @@ gameBus.emit('score:updated', { score: 1000 })
 ```
 
 ### Benefits
+
 - **Decoupling**: Game logic and achievements don't directly depend on each other
 - **Testability**: Easy to mock events in unit tests
 - **Extensibility**: Add new listeners without modifying existing code
@@ -219,6 +238,7 @@ npm run lint
 ## 🚀 Deployment
 
 ### Netlify (Recommended)
+
 ```bash
 # Build and deploy to Netlify
 npm run build
@@ -229,6 +249,7 @@ netlify deploy --prod --dir=dist
 ```
 
 ### Other Platforms
+
 - **Vercel**: Connect GitHub repository for automatic deployments
 - **GitHub Pages**: Use GitHub Actions workflow
 - **Docker**: Dockerfile included for containerized deployments
@@ -238,6 +259,7 @@ See [Deployment Guide](./tutorials/deployment/README.md) for detailed instructio
 ## 🎨 Customization
 
 ### Adding New Themes
+
 ```typescript
 // src/types/theme.ts
 export const customTheme: Theme = {
@@ -245,18 +267,19 @@ export const customTheme: Theme = {
   name: 'Custom Theme',
   colors: {
     bg: '#your-bg-color',
-    surface: '#your-surface-color',
+    surface: '#your-surface-color'
     // ... more colors
   }
 }
 ```
 
 ### Custom Audio Tracks
+
 ```typescript
 // src/composables/useAudio.ts
 const musicTracks = {
   custom: [
-    { freq: 440, duration: 0.5 },
+    { freq: 440, duration: 0.5 }
     // ... your custom notes
   ]
 }
@@ -271,6 +294,7 @@ const musicTracks = {
 5. Open a Pull Request
 
 ### Development Guidelines
+
 - Follow TypeScript strict mode
 - Write tests for new features
 - Use conventional commit messages
@@ -316,4 +340,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ by the Tetrys team**
 
-*Tetrys - Where classic gameplay meets modern technology*
+📦 **Source Code**: [github.com/darth-dodo/tetrys](https://github.com/darth-dodo/tetrys)
+
+_Tetrys - Where classic gameplay meets modern technology_

@@ -96,9 +96,10 @@ describe('useAchievements Save Error Notification', () => {
     })
     await flushPromises()
 
-    // Then: saveError should be set
+    // Then: saveError should be set with quota error message
     expect(wrapper.vm.achievements.saveError.value).not.toBeNull()
-    expect(wrapper.vm.achievements.saveError.value).toContain('Failed to save')
+    expect(wrapper.vm.achievements.saveError.value).toContain('Storage quota exceeded')
+    expect(wrapper.vm.achievements.isQuotaError.value).toBe(true)
 
     consoleSpy.mockRestore()
     localStorage.setItem = originalSetItem
@@ -112,7 +113,9 @@ describe('useAchievements Save Error Notification', () => {
 
     localStorage.setItem = vi.fn((key: string, value: string) => {
       if (shouldFail && key === 'tetris_achievements') {
-        throw new Error('Storage full')
+        const error = new Error('Storage full')
+        error.name = 'QuotaExceededError'
+        throw error
       }
       originalSetItem(key, value)
     })
@@ -132,6 +135,7 @@ describe('useAchievements Save Error Notification', () => {
     await flushPromises()
 
     expect(wrapper.vm.achievements.saveError.value).not.toBeNull()
+    expect(wrapper.vm.achievements.isQuotaError.value).toBe(true)
 
     // When: Second save succeeds
     shouldFail = false
@@ -142,8 +146,9 @@ describe('useAchievements Save Error Notification', () => {
     })
     await flushPromises()
 
-    // Then: saveError should be cleared
+    // Then: saveError and isQuotaError should be cleared
     expect(wrapper.vm.achievements.saveError.value).toBeNull()
+    expect(wrapper.vm.achievements.isQuotaError.value).toBe(false)
 
     consoleSpy.mockRestore()
     localStorage.setItem = originalSetItem
@@ -174,6 +179,75 @@ describe('useAchievements Save Error Notification', () => {
 
     // Then: Error message should include the error
     expect(wrapper.vm.achievements.saveError.value).toContain('Custom test error message')
+
+    consoleSpy.mockRestore()
+    localStorage.setItem = originalSetItem
+    wrapper.unmount()
+  })
+
+  it('should distinguish between quota errors and other errors', async () => {
+    // Given: Mock localStorage to throw non-quota error
+    const originalSetItem = localStorage.setItem
+    localStorage.setItem = vi.fn(() => {
+      throw new Error('Network error')
+    })
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    // When: Attempting to save
+    const component = createAchievementsTestComponent()
+    const wrapper = mount(component)
+    await flushPromises()
+
+    wrapper.vm.achievements.unlockAchievement('first_blood', {
+      score: 100,
+      level: 1,
+      lines: 1
+    })
+    await flushPromises()
+
+    // Then: Should set error but NOT mark as quota error
+    expect(wrapper.vm.achievements.saveError.value).not.toBeNull()
+    expect(wrapper.vm.achievements.saveError.value).toContain('Network error')
+    expect(wrapper.vm.achievements.isQuotaError.value).toBe(false)
+
+    consoleSpy.mockRestore()
+    localStorage.setItem = originalSetItem
+    wrapper.unmount()
+  })
+
+  it('should clear both saveError and isQuotaError when clearSaveError is called', async () => {
+    // Given: Mock localStorage to throw quota error
+    const originalSetItem = localStorage.setItem
+    localStorage.setItem = vi.fn(() => {
+      const error = new Error('Storage quota exceeded')
+      error.name = 'QuotaExceededError'
+      throw error
+    })
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const component = createAchievementsTestComponent()
+    const wrapper = mount(component)
+    await flushPromises()
+
+    // When: Error occurs
+    wrapper.vm.achievements.unlockAchievement('first_blood', {
+      score: 100,
+      level: 1,
+      lines: 1
+    })
+    await flushPromises()
+
+    expect(wrapper.vm.achievements.saveError.value).not.toBeNull()
+    expect(wrapper.vm.achievements.isQuotaError.value).toBe(true)
+
+    // When: clearSaveError is called
+    wrapper.vm.achievements.clearSaveError()
+
+    // Then: Both should be cleared
+    expect(wrapper.vm.achievements.saveError.value).toBeNull()
+    expect(wrapper.vm.achievements.isQuotaError.value).toBe(false)
 
     consoleSpy.mockRestore()
     localStorage.setItem = originalSetItem
