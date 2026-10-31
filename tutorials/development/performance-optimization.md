@@ -1526,7 +1526,7 @@ const AUDIO_SAMPLE_RATE = isMobile ? 22050 : 44100
 ```html
 <meta
   name="viewport"
-  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  content="width=device-width, initial-scale=1.0"
 >
 ```
 
