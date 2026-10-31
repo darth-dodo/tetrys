@@ -63,7 +63,7 @@ A modern implementation of the classic Tetris game built with Vue 3, TypeScript,
 ### Prerequisites
 
 - Node.js 18+
-- npm 9+ or yarn 1.22+
+- npm 9+
 
 ### Installation
 

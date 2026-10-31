@@ -7,12 +7,14 @@ Welcome to Tetrys! This guide will help you set up the development environment, 
 Before you begin, ensure you have the following installed:
 
 ### Required Software
+
 - **Node.js 18+** - [Download here](https://nodejs.org/)
-- **npm 9+** or **yarn 1.22+** - Package manager
+- **npm 9+** - Package manager (the project uses npm and `package-lock.json`)
 - **Git** - Version control system
 - **VS Code** (recommended) - Code editor
 
 ### Recommended VS Code Extensions
+
 ```json
 {
   "recommendations": [
@@ -28,6 +30,7 @@ Before you begin, ensure you have the following installed:
 ## 🛠️ Installation & Setup
 
 ### 1. Clone the Repository
+
 ```bash
 # Using SSH (recommended)
 git clone git@github.com:darth-dodo/tetrys.git
@@ -39,19 +42,15 @@ cd tetrys
 ```
 
 ### 2. Install Dependencies
-```bash
-# Using npm
-npm install
 
-# Or using yarn
-yarn install
+```bash
+npm install
 ```
 
 ### 3. Start Development Server
+
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
 Visit [http://localhost:5173](http://localhost:5173) to see the game running!
@@ -66,6 +65,7 @@ When you first run Tetrys, you'll see:
 4. **Responsive Layout**: Optimized for your screen size
 
 ### Testing the Game
+
 1. Click **"START GAME"** to begin
 2. Use arrow keys (desktop) or swipe gestures (mobile)
 3. Try the **⚙️ SETTINGS** button to explore themes and audio
@@ -94,6 +94,7 @@ tetrys/
 ## 🔧 Development Scripts
 
 ### Core Commands
+
 ```bash
 # Development server (hot reload)
 npm run dev
@@ -112,6 +113,7 @@ npm run test:watch
 ```
 
 ### Code Quality
+
 ```bash
 # Type checking
 npm run type-check
@@ -128,6 +130,7 @@ npm run format
 Let's make your first contribution by adding a custom theme!
 
 ### 1. Understand the Theme System
+
 Navigate to `src/types/theme.ts` to see how themes are defined:
 
 ```typescript
@@ -144,6 +147,7 @@ export interface Theme {
 ```
 
 ### 2. Add a New Theme
+
 Add this theme to the `themes` object in `src/types/theme.ts`:
 
 ```typescript
@@ -177,14 +181,24 @@ export const themes: Record<ThemeId, Theme> = {
 ```
 
 ### 3. Update Theme Type
+
 Add 'custom' to the `ThemeId` type:
 
 ```typescript
-export type ThemeId = 'retro' | 'neon' | 'classic' | 'ocean' | 
-                      'sunset' | 'minimal' | 'matrix' | 'gameboy' | 'custom'
+export type ThemeId =
+  | 'retro'
+  | 'neon'
+  | 'classic'
+  | 'ocean'
+  | 'sunset'
+  | 'minimal'
+  | 'matrix'
+  | 'gameboy'
+  | 'custom'
 ```
 
 ### 4. Test Your Changes
+
 1. Run `npm run dev`
 2. Open settings in the game
 3. Look for your "My Custom Theme" in the theme selector!
@@ -192,6 +206,7 @@ export type ThemeId = 'retro' | 'neon' | 'classic' | 'ocean' |
 ## 📱 Mobile Development
 
 ### Testing on Mobile Devices
+
 ```bash
 # Start dev server with network access
 npm run dev -- --host
@@ -203,15 +218,17 @@ npm run dev -- --host
 Access this URL on your mobile device to test touch controls.
 
 ### Mobile-First Approach
+
 The codebase follows mobile-first responsive design:
 
 1. **Base styles**: Optimized for mobile (375px+)
-2. **Tablet breakpoint**: `@media (min-width: 768px)`  
+2. **Tablet breakpoint**: `@media (min-width: 768px)`
 3. **Desktop breakpoint**: `@media (min-width: 1024px)`
 
 ## 🧪 Testing Your Changes
 
 ### Running Tests
+
 ```bash
 # Run all tests once
 npm run test
@@ -224,6 +241,7 @@ npm run test:coverage
 ```
 
 ### Writing Your First Test
+
 Create `src/components/__tests__/MyComponent.test.ts`:
 
 ```typescript
@@ -242,6 +260,7 @@ describe('MyComponent', () => {
 ## 🚨 Common Issues & Solutions
 
 ### Port Already in Use
+
 ```bash
 # Kill process on port 5173
 npx kill-port 5173
@@ -251,6 +270,7 @@ npm run dev -- --port 3000
 ```
 
 ### TypeScript Errors
+
 ```bash
 # Clear cache and restart TypeScript
 npm run type-check
@@ -260,12 +280,15 @@ npm run type-check
 ```
 
 ### Audio Not Working
+
 The Web Audio API requires user interaction:
+
 1. Enable audio in settings
 2. Interact with the page first (click/tap)
 3. Check browser console for audio errors
 
 ### Build Failures
+
 ```bash
 # Clear node_modules and reinstall
 rm -rf node_modules package-lock.json
@@ -280,20 +303,22 @@ rm -rf node_modules/.vite
 Now that you have Tetrys running, explore these guides:
 
 1. **[Architecture Overview](../architecture/README.md)** - Understanding the system design
-2. **[Components Guide](../components/README.md)** - Vue component architecture  
+2. **[Components Guide](../components/README.md)** - Vue component architecture
 3. **[Composables Deep Dive](../composables/README.md)** - Reactive state management
 4. **[Testing Guide](../testing/README.md)** - Comprehensive testing strategies
 
 ## 🤝 Contributing Guidelines
 
 ### Before You Commit
+
 1. **Run tests**: `npm run test`
-2. **Type check**: `npm run type-check`  
+2. **Type check**: `npm run type-check`
 3. **Lint code**: `npm run lint`
 4. **Test on mobile**: Verify responsive design
 5. **Test audio**: Ensure audio system works
 
 ### Commit Message Format
+
 ```
 type(scope): description
 
